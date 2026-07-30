@@ -1,2 +1,196 @@
-import { AfterViewInit,Component,ElementRef,OnDestroy,signal,viewChild } from '@angular/core';import { Canvas,FabricText,Rect } from 'fabric';import { openDB } from 'idb';
-@Component({standalone:true,styles:[`.head,.toolbar{display:flex;justify-content:space-between;gap:.5rem;flex-wrap:wrap}.studio{grid-template-columns:220px 1fr 240px}.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:1rem}.stage{display:grid;place-items:center;background:#e9e8ed;min-height:650px;overflow:auto}canvas{box-shadow:0 12px 35px #1113}.panel button{width:100%;margin-bottom:.5rem}@media(max-width:900px){.studio{grid-template-columns:1fr}.stage{min-height:70vh}.props{display:none}}`],template:`<header class="head"><div><p class="eyebrow">Flyer studio</p><h1>Sunday Celebration</h1><span class="muted">1080 × 1350 · {{status()}}</span></div><div><button class="btn secondary" (click)="undo()">↶ Undo</button> <button class="btn secondary">Export</button> <button class="btn" (click)="save()">Save project</button></div></header><div class="toolbar card"><button class="btn secondary" (click)="addText()">T Text</button><button class="btn secondary" (click)="addShape()">□ Shape</button><button class="btn secondary">▧ Upload</button><button class="btn secondary">⌗ QR code</button><label>Zoom <input type="range" min="30" max="100" value="55" (input)="zoom($event)"></label></div><div class="grid studio"><aside class="panel"><h3>Layers</h3><button class="btn secondary">Theme headline</button><button class="btn secondary">Event details</button><button class="btn secondary">Background</button><hr><h3>Assets</h3><button class="btn secondary">Church logos</button><button class="btn secondary">Speaker photos</button></aside><main class="stage"><canvas #canvas width="540" height="675" aria-label="Editable flyer canvas"></canvas></main><aside class="panel props"><h3>Properties</h3><div class="field"><label>Font family</label><select><option>Inter</option><option>Georgia</option></select></div><div class="field"><label>Font size</label><input type="number" value="42"></div><h3>Arrange</h3><button class="btn secondary">Align center</button><button class="btn secondary">Duplicate</button><button class="btn secondary">Lock layer</button><button class="btn secondary">Delete</button></aside></div>`}) export class FlyerPage implements AfterViewInit,OnDestroy{readonly canvasEl=viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');readonly status=signal('Autosaved');private canvas?:Canvas;ngAfterViewInit(){this.canvas=new Canvas(this.canvasEl().nativeElement,{backgroundColor:'#27194e',preserveObjectStacking:true});this.canvas.add(new FabricText('KINGDOM\nAUTHORITY',{left:55,top:140,fontSize:52,fontWeight:'bold',fill:'#fff'}),new FabricText('SUNDAY • 9:00 AM\nGRACE COMMUNITY CHURCH',{left:58,top:480,fontSize:18,fill:'#d9cdfb'}),new Rect({left:55,top:100,width:80,height:8,fill:'#d5a940'}));this.canvas.renderAll()}addText(){this.canvas?.add(new FabricText('Edit this text',{left:100,top:300,fontSize:30,fill:'#fff'}));this.status.set('Unsaved changes')}addShape(){this.canvas?.add(new Rect({left:120,top:350,width:160,height:90,fill:'#7457cb'}))}undo(){const objects=this.canvas?.getObjects();if(objects?.length)this.canvas?.remove(objects[objects.length-1]!)}zoom(event:Event){const value=Number((event.target as HTMLInputElement).value)/100;this.canvas?.setZoom(value)}async save(){if(!this.canvas)return;const db=await openDB('sanctuary-drafts',1,{upgrade(database){if(!database.objectStoreNames.contains('flyers'))database.createObjectStore('flyers')}});await db.put('flyers',this.canvas.toJSON(),'current');this.status.set('Saved locally')}ngOnDestroy(){this.canvas?.dispose()}}
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  OnDestroy,
+  signal,
+  viewChild,
+} from "@angular/core";
+import { Canvas, FabricText, Rect } from "fabric";
+import { openDB } from "idb";
+@Component({
+  standalone: true,
+  styles: [
+    `
+      .head,
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .studio {
+        grid-template-columns: 220px 1fr 240px;
+      }
+      .panel {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1rem;
+      }
+      .stage {
+        display: grid;
+        place-items: center;
+        background: #e9e8ed;
+        min-height: 650px;
+        overflow: auto;
+      }
+      canvas {
+        box-shadow: 0 12px 35px #1113;
+      }
+      .panel button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+      }
+      @media (max-width: 900px) {
+        .studio {
+          grid-template-columns: 1fr;
+        }
+        .stage {
+          min-height: 70vh;
+        }
+        .props {
+          display: none;
+        }
+      }
+    `,
+  ],
+  template: `<header class="head">
+      <div>
+        <p class="eyebrow">Flyer studio</p>
+        <h1>Sunday Celebration</h1>
+        <span class="muted">1080 × 1350 · {{ status() }}</span>
+      </div>
+      <div>
+        <button class="btn secondary" (click)="undo()">↶ Undo</button>
+        <button class="btn secondary">Export</button>
+        <button class="btn" (click)="save()">Save project</button>
+      </div>
+    </header>
+    <div class="toolbar card">
+      <button class="btn secondary" (click)="addText()">T Text</button
+      ><button class="btn secondary" (click)="addShape()">□ Shape</button
+      ><button class="btn secondary">▧ Upload</button
+      ><button class="btn secondary">⌗ QR code</button
+      ><label
+        >Zoom
+        <input
+          type="range"
+          min="30"
+          max="100"
+          value="55"
+          (input)="zoom($event)"
+      /></label>
+    </div>
+    <div class="grid studio">
+      <aside class="panel">
+        <h3>Layers</h3>
+        <button class="btn secondary">Theme headline</button
+        ><button class="btn secondary">Event details</button
+        ><button class="btn secondary">Background</button>
+        <hr />
+        <h3>Assets</h3>
+        <button class="btn secondary">Church logos</button
+        ><button class="btn secondary">Speaker photos</button>
+      </aside>
+      <main class="stage">
+        <canvas
+          #canvas
+          width="540"
+          height="675"
+          aria-label="Editable flyer canvas"
+        ></canvas>
+      </main>
+      <aside class="panel props">
+        <h3>Properties</h3>
+        <div class="field">
+          <label>Font family</label
+          ><select>
+            <option>Inter</option>
+            <option>Georgia</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Font size</label><input type="number" value="42" />
+        </div>
+        <h3>Arrange</h3>
+        <button class="btn secondary">Align center</button
+        ><button class="btn secondary">Duplicate</button
+        ><button class="btn secondary">Lock layer</button
+        ><button class="btn secondary">Delete</button>
+      </aside>
+    </div>`,
+})
+export class FlyerPage implements AfterViewInit, OnDestroy {
+  readonly canvasEl =
+    viewChild.required<ElementRef<HTMLCanvasElement>>("canvas");
+  readonly status = signal("Autosaved");
+  private canvas?: Canvas;
+  ngAfterViewInit() {
+    this.canvas = new Canvas(this.canvasEl().nativeElement, {
+      backgroundColor: "#27194e",
+      preserveObjectStacking: true,
+    });
+    this.canvas.add(
+      new FabricText("KINGDOM\nAUTHORITY", {
+        left: 55,
+        top: 140,
+        fontSize: 52,
+        fontWeight: "bold",
+        fill: "#fff",
+      }),
+      new FabricText("SUNDAY • 9:00 AM\nGRACE COMMUNITY CHURCH", {
+        left: 58,
+        top: 480,
+        fontSize: 18,
+        fill: "#d9cdfb",
+      }),
+      new Rect({ left: 55, top: 100, width: 80, height: 8, fill: "#d5a940" }),
+    );
+    this.canvas.renderAll();
+  }
+  addText() {
+    this.canvas?.add(
+      new FabricText("Edit this text", {
+        left: 100,
+        top: 300,
+        fontSize: 30,
+        fill: "#fff",
+      }),
+    );
+    this.status.set("Unsaved changes");
+  }
+  addShape() {
+    this.canvas?.add(
+      new Rect({
+        left: 120,
+        top: 350,
+        width: 160,
+        height: 90,
+        fill: "#7457cb",
+      }),
+    );
+  }
+  undo() {
+    const objects = this.canvas?.getObjects();
+    if (objects?.length) this.canvas?.remove(objects[objects.length - 1]!);
+  }
+  zoom(event: Event) {
+    const value = Number((event.target as HTMLInputElement).value) / 100;
+    this.canvas?.setZoom(value);
+  }
+  async save() {
+    if (!this.canvas) return;
+    const db = await openDB("sanctuary-drafts", 1, {
+      upgrade(database) {
+        if (!database.objectStoreNames.contains("flyers"))
+          database.createObjectStore("flyers");
+      },
+    });
+    await db.put("flyers", this.canvas.toJSON(), "current");
+    this.status.set("Saved locally");
+  }
+  ngOnDestroy() {
+    this.canvas?.dispose();
+  }
+}

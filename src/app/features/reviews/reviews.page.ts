@@ -1,3 +1,134 @@
-import { Component,signal } from '@angular/core';
-interface Review{id:number;title:string;type:string;owner:string;status:string}
-@Component({standalone:true,styles:[`.layout{grid-template-columns:380px 1fr}.review{padding:1rem;border:1px solid var(--line);border-radius:12px;margin-bottom:.7rem;cursor:pointer}.review.active{border-color:var(--violet);background:#f7f4ff}.actions{display:flex;gap:.6rem;flex-wrap:wrap}.version{background:#fafafa;border-left:3px solid var(--violet);padding:1rem}@media(max-width:800px){.layout{grid-template-columns:1fr}}`],template:`<p class="eyebrow">Governance</p><h1>Review & approval center</h1><p class="muted">Content approval and publishing authorization are handled independently.</p><div class="grid layout"><aside class="card"><h2>Approval queue</h2>@for(r of queue();track r.id){<article class="review" [class.active]="selected()?.id===r.id" (click)="selected.set(r)"><span class="badge">{{r.type}}</span><h3>{{r.title}}</h3><small class="muted">Submitted by {{r.owner}}</small></article>}</aside><main class="card">@if(selected();as item){<span class="badge">{{item.status}}</span><h2>{{item.title}}</h2><p class="muted">Version 3 · Updated 32 minutes ago</p><div class="version"><h3>Reviewer preview</h3><p>This content is displayed in its final ministry format with scripture references, pastoral language, and all proposed edits available for comparison.</p><p><b>Publishing authorization:</b> Not requested. Approval here confirms theological and editorial readiness only.</p></div><div class="field" style="margin:1rem 0"><label for="comment">Review comment</label><textarea id="comment" rows="4" placeholder="Give clear, actionable feedback"></textarea></div><div class="actions"><button class="btn secondary" (click)="act('Changes requested')">Request changes</button><button class="btn secondary" (click)="act('Rejected')">Reject</button><button class="btn" (click)="act('Approved')">Approve content</button></div>}@else{<div class="empty">Select an item to start reviewing.</div>}</main></div>`}) export class ReviewsPage{readonly queue=signal<Review[]>([{id:1,title:'August: Enlarged by Grace',type:'Theme',owner:'Pastor Ama',status:'Awaiting Approval'},{id:2,title:'The Authority of the Believer',type:'Sermon',owner:'Kwame Mensah',status:'Awaiting Approval'},{id:3,title:'Youth Encounter',type:'Flyer',owner:'Media Team',status:'Awaiting Approval'}]);readonly selected=signal<Review|null>(this.queue()[0]??null);act(status:string){const id=this.selected()?.id;this.queue.update(q=>q.filter(x=>x.id!==id));this.selected.set(this.queue()[0]??null)}}
+import { Component, signal } from "@angular/core";
+interface Review {
+  id: number;
+  title: string;
+  type: string;
+  owner: string;
+  status: string;
+}
+@Component({
+  standalone: true,
+  styles: [
+    `
+      .layout {
+        grid-template-columns: 380px 1fr;
+      }
+      .review {
+        padding: 1rem;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        margin-bottom: 0.7rem;
+        cursor: pointer;
+      }
+      .review.active {
+        border-color: var(--violet);
+        background: #f7f4ff;
+      }
+      .actions {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+      .version {
+        background: #fafafa;
+        border-left: 3px solid var(--violet);
+        padding: 1rem;
+      }
+      @media (max-width: 800px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    `,
+  ],
+  template: `<p class="eyebrow">Governance</p>
+    <h1>Review & approval center</h1>
+    <p class="muted">
+      Content approval and publishing authorization are handled independently.
+    </p>
+    <div class="grid layout">
+      <aside class="card">
+        <h2>Approval queue</h2>
+        @for (r of queue(); track r.id) {
+          <article
+            class="review"
+            [class.active]="selected()?.id === r.id"
+            (click)="selected.set(r)"
+          >
+            <span class="badge">{{ r.type }}</span>
+            <h3>{{ r.title }}</h3>
+            <small class="muted">Submitted by {{ r.owner }}</small>
+          </article>
+        }
+      </aside>
+      <main class="card">
+        @if (selected(); as item) {
+          <span class="badge">{{ item.status }}</span>
+          <h2>{{ item.title }}</h2>
+          <p class="muted">Version 3 · Updated 32 minutes ago</p>
+          <div class="version">
+            <h3>Reviewer preview</h3>
+            <p>
+              This content is displayed in its final ministry format with
+              scripture references, pastoral language, and all proposed edits
+              available for comparison.
+            </p>
+            <p>
+              <b>Publishing authorization:</b> Not requested. Approval here
+              confirms theological and editorial readiness only.
+            </p>
+          </div>
+          <div class="field" style="margin:1rem 0">
+            <label for="comment">Review comment</label
+            ><textarea
+              id="comment"
+              rows="4"
+              placeholder="Give clear, actionable feedback"
+            ></textarea>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" (click)="act('Changes requested')">
+              Request changes</button
+            ><button class="btn secondary" (click)="act('Rejected')">
+              Reject</button
+            ><button class="btn" (click)="act('Approved')">
+              Approve content
+            </button>
+          </div>
+        } @else {
+          <div class="empty">Select an item to start reviewing.</div>
+        }
+      </main>
+    </div>`,
+})
+export class ReviewsPage {
+  readonly queue = signal<Review[]>([
+    {
+      id: 1,
+      title: "August: Enlarged by Grace",
+      type: "Theme",
+      owner: "Pastor Ama",
+      status: "Awaiting Approval",
+    },
+    {
+      id: 2,
+      title: "The Authority of the Believer",
+      type: "Sermon",
+      owner: "Kwame Mensah",
+      status: "Awaiting Approval",
+    },
+    {
+      id: 3,
+      title: "Youth Encounter",
+      type: "Flyer",
+      owner: "Media Team",
+      status: "Awaiting Approval",
+    },
+  ]);
+  readonly selected = signal<Review | null>(this.queue()[0] ?? null);
+  act(status: string) {
+    const id = this.selected()?.id;
+    this.queue.update((q) => q.filter((x) => x.id !== id));
+    this.selected.set(this.queue()[0] ?? null);
+  }
+}
