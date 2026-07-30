@@ -1,4 +1,145 @@
-import { Component,computed,inject,input } from '@angular/core';import { FormControl,FormGroup,ReactiveFormsModule,Validators } from '@angular/forms';import { SessionService } from '../../services/session.service';
-@Component({standalone:true,imports:[ReactiveFormsModule],styles:[`:host{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}.brand{background:#2c1d59;color:#fff;padding:clamp(2rem,7vw,7rem);display:flex;flex-direction:column;justify-content:space-between}.auth{display:grid;place-items:center;padding:2rem}.panel{width:min(430px,100%)}.logo{font-size:1.4rem;font-weight:800}.quote{font-size:clamp(2rem,4vw,4.2rem);line-height:1.04}.form{display:grid;gap:1rem}.social{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}.error{color:var(--danger);font-size:.8rem}@media(max-width:760px){:host{grid-template-columns:1fr}.brand{display:none}}`],template:`
-<section class="brand"><div class="logo">✦ SanctuaryAI</div><div><p class="eyebrow" style="color:#c8bafd">Ministry content operating system</p><h1 class="quote">From Divine Inspiration to Ministry Impact.</h1><p style="color:#d8d0ee">Plan, create, approve and publish scripture-centered content with your whole ministry team.</p></div><small>Secure • collaborative • church-centered</small></section>
-<main class="auth"><div class="panel"><p class="eyebrow">Welcome</p><h1>{{title()}}</h1><p class="muted">Use your ministry workspace credentials to continue.</p><form class="form" [formGroup]="form" (ngSubmit)="submit()"><div class="field"><label for="email">Email address</label><input id="email" type="email" autocomplete="email" formControlName="email">@if(form.controls.email.touched&&form.controls.email.invalid){<span class="error">Enter a valid email address.</span>}</div><div class="field"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" formControlName="password"></div><button class="btn" [disabled]="form.invalid">Continue securely</button><div class="social"><button type="button" class="btn secondary">Google</button><button type="button" class="btn secondary">Microsoft</button></div></form><p class="muted" style="margin-top:1rem">Need access? Contact your church administrator or accept your invitation.</p></div></main>`}) export class LoginPage{readonly mode=input('login');private readonly session=inject(SessionService);readonly form=new FormGroup({email:new FormControl('',{nonNullable:true,validators:[Validators.required,Validators.email]}),password:new FormControl('',{nonNullable:true,validators:[Validators.required,Validators.minLength(8)]})});readonly title=computed(()=>this.mode()==='register'?'Create your account':'Sign in to SanctuaryAI');submit(){if(this.form.valid)this.session.login(this.form.controls.email.value)}}
+import { Component, computed, inject, input } from "@angular/core";
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
+import { SessionService } from "../../services/session.service";
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  styles: [
+    `
+      :host {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+      .brand {
+        background: #2c1d59;
+        color: #fff;
+        padding: clamp(2rem, 7vw, 7rem);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .auth {
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+      }
+      .panel {
+        width: min(430px, 100%);
+      }
+      .logo {
+        font-size: 1.4rem;
+        font-weight: 800;
+      }
+      .quote {
+        font-size: clamp(2rem, 4vw, 4.2rem);
+        line-height: 1.04;
+      }
+      .form {
+        display: grid;
+        gap: 1rem;
+      }
+      .social {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+      }
+      .error {
+        color: var(--danger);
+        font-size: 0.8rem;
+      }
+      @media (max-width: 760px) {
+        :host {
+          grid-template-columns: 1fr;
+        }
+        .brand {
+          display: none;
+        }
+      }
+    `,
+  ],
+  template: ` <section class="brand">
+      <div class="logo">✦ SanctuaryAI</div>
+      <div>
+        <p class="eyebrow" style="color:#c8bafd">
+          Ministry content operating system
+        </p>
+        <h1 class="quote">From Divine Inspiration to Ministry Impact.</h1>
+        <p style="color:#d8d0ee">
+          Plan, create, approve and publish scripture-centered content with your
+          whole ministry team.
+        </p>
+      </div>
+      <small>Secure • collaborative • church-centered</small>
+    </section>
+    <main class="auth">
+      <div class="panel">
+        <p class="eyebrow">Welcome</p>
+        <h1>{{ title() }}</h1>
+        <p class="muted">
+          Use your ministry workspace credentials to continue.
+        </p>
+        <form class="form" [formGroup]="form" (ngSubmit)="submit()">
+          <div class="field">
+            <label for="email">Email address</label
+            ><input
+              id="email"
+              type="email"
+              autocomplete="email"
+              formControlName="email"
+            />
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <span class="error">Enter a valid email address.</span>
+            }
+          </div>
+          <div class="field">
+            <label for="password">Password</label
+            ><input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              formControlName="password"
+            />
+          </div>
+          <button class="btn" [disabled]="form.invalid">
+            Continue securely
+          </button>
+          <div class="social">
+            <button type="button" class="btn secondary">Google</button
+            ><button type="button" class="btn secondary">Microsoft</button>
+          </div>
+        </form>
+        <p class="muted" style="margin-top:1rem">
+          Need access? Contact your church administrator or accept your
+          invitation.
+        </p>
+      </div>
+    </main>`,
+})
+export class LoginPage {
+  readonly mode = input("login");
+  private readonly session = inject(SessionService);
+  readonly form = new FormGroup({
+    email: new FormControl("", {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
+    password: new FormControl("", {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(8)],
+    }),
+  });
+  readonly title = computed(() =>
+    this.mode() === "register"
+      ? "Create your account"
+      : "Sign in to SanctuaryAI",
+  );
+  submit() {
+    if (this.form.valid) this.session.login(this.form.controls.email.value);
+  }
+}

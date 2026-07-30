@@ -1,2 +1,174 @@
-import { Component,OnDestroy,signal } from '@angular/core';import { FormControl,FormGroup,ReactiveFormsModule } from '@angular/forms';import { openDB } from 'idb';
-@Component({standalone:true,imports:[ReactiveFormsModule],styles:[`.toolbar{display:flex;justify-content:space-between;gap:1rem}.studio{grid-template-columns:260px minmax(400px,1fr) 280px}.panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1rem}.editor{min-height:650px}.editor [contenteditable]{min-height:500px;outline:none;line-height:1.8}.tools{display:flex;gap:.4rem;border-bottom:1px solid var(--line);padding-bottom:.8rem}.tools button{border:0;background:#f3f1f7;border-radius:6px;padding:.4rem .6rem}.outline button,.ai button{width:100%;text-align:left;margin-bottom:.5rem}.saved{font-size:.8rem;color:var(--green)}@media(max-width:1100px){.studio{grid-template-columns:220px 1fr}.ai{grid-column:1/-1}}@media(max-width:700px){.studio{display:block}.panel{margin-bottom:1rem}.outline{display:none}.editor{min-height:75vh}}`],template:`<header class="toolbar"><div><p class="eyebrow">Sermon studio · Draft</p><h1>The Authority of the Believer</h1><span class="saved">{{saveState()}}</span></div><div><button class="btn secondary">Export</button> <button class="btn">Submit for review</button></div></header><div class="grid studio"><aside class="panel outline"><h3>Outline</h3>@for(item of outline;track item){<button class="btn secondary">{{item}}</button>}</aside><main class="panel editor"><div class="tools"><button aria-label="Bold"><b>B</b></button><button aria-label="Italic"><i>I</i></button><button>Heading</button><button>Quote</button><button>Scripture</button></div><div contenteditable="true" role="textbox" aria-multiline="true" (input)="changed($event)"><h2>Introduction</h2><p>Every believer has been entrusted with authority through Christ. This message explores how scripture calls the church to walk confidently, humbly, and faithfully.</p><h2>Biblical background</h2><blockquote>“I have given you authority…” — Luke 10:19</blockquote><h2>Main point: Authority begins with identity</h2><p>We exercise spiritual authority from a place of relationship, not performance.</p></div></main><aside class="panel ai"><p class="eyebrow">AI writing partner</p><h3>Improve selected section</h3>@for(action of actions;track action){<button class="btn secondary">✦ {{action}}</button>}<p class="muted">AI suggestions create a reviewable version and never overwrite approved text.</p></aside></div>`}) export class SermonPage implements OnDestroy{readonly saveState=signal('Draft recovered · All changes saved');private timer?:ReturnType<typeof setTimeout>;readonly outline=['Introduction','Biblical background','Main points','Applications','Prophetic insights','Altar call','Conclusion','Prayer points'];readonly actions=['Expand section','Add biblical context','Add Ghanaian example','Improve transitions','Verify references','Create altar call'];changed(event:Event){this.saveState.set('Saving…');clearTimeout(this.timer);const content=(event.target as HTMLElement).innerHTML;this.timer=setTimeout(()=>void this.persist(content),500)}private async persist(content:string){const db=await openDB('sanctuary-drafts',1,{upgrade(database){database.createObjectStore('sermons')}});await db.put('sermons',content,'current');this.saveState.set('All changes saved locally')}ngOnDestroy(){clearTimeout(this.timer)}}
+import { Component, OnDestroy, signal } from "@angular/core";
+import { FormControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
+import { openDB } from "idb";
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  styles: [
+    `
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .studio {
+        grid-template-columns: 260px minmax(400px, 1fr) 280px;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1rem;
+      }
+      .editor {
+        min-height: 650px;
+      }
+      .editor [contenteditable] {
+        min-height: 500px;
+        outline: none;
+        line-height: 1.8;
+      }
+      .tools {
+        display: flex;
+        gap: 0.4rem;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 0.8rem;
+      }
+      .tools button {
+        border: 0;
+        background: #f3f1f7;
+        border-radius: 6px;
+        padding: 0.4rem 0.6rem;
+      }
+      .outline button,
+      .ai button {
+        width: 100%;
+        text-align: left;
+        margin-bottom: 0.5rem;
+      }
+      .saved {
+        font-size: 0.8rem;
+        color: var(--green);
+      }
+      @media (max-width: 1100px) {
+        .studio {
+          grid-template-columns: 220px 1fr;
+        }
+        .ai {
+          grid-column: 1/-1;
+        }
+      }
+      @media (max-width: 700px) {
+        .studio {
+          display: block;
+        }
+        .panel {
+          margin-bottom: 1rem;
+        }
+        .outline {
+          display: none;
+        }
+        .editor {
+          min-height: 75vh;
+        }
+      }
+    `,
+  ],
+  template: `<header class="toolbar">
+      <div>
+        <p class="eyebrow">Sermon studio · Draft</p>
+        <h1>The Authority of the Believer</h1>
+        <span class="saved">{{ saveState() }}</span>
+      </div>
+      <div>
+        <button class="btn secondary">Export</button>
+        <button class="btn">Submit for review</button>
+      </div>
+    </header>
+    <div class="grid studio">
+      <aside class="panel outline">
+        <h3>Outline</h3>
+        @for (item of outline; track item) {
+          <button class="btn secondary">{{ item }}</button>
+        }
+      </aside>
+      <main class="panel editor">
+        <div class="tools">
+          <button aria-label="Bold"><b>B</b></button
+          ><button aria-label="Italic"><i>I</i></button><button>Heading</button
+          ><button>Quote</button><button>Scripture</button>
+        </div>
+        <div
+          contenteditable="true"
+          role="textbox"
+          aria-multiline="true"
+          (input)="changed($event)"
+        >
+          <h2>Introduction</h2>
+          <p>
+            Every believer has been entrusted with authority through Christ.
+            This message explores how scripture calls the church to walk
+            confidently, humbly, and faithfully.
+          </p>
+          <h2>Biblical background</h2>
+          <blockquote>“I have given you authority…” — Luke 10:19</blockquote>
+          <h2>Main point: Authority begins with identity</h2>
+          <p>
+            We exercise spiritual authority from a place of relationship, not
+            performance.
+          </p>
+        </div>
+      </main>
+      <aside class="panel ai">
+        <p class="eyebrow">AI writing partner</p>
+        <h3>Improve selected section</h3>
+        @for (action of actions; track action) {
+          <button class="btn secondary">✦ {{ action }}</button>
+        }
+        <p class="muted">
+          AI suggestions create a reviewable version and never overwrite
+          approved text.
+        </p>
+      </aside>
+    </div>`,
+})
+export class SermonPage implements OnDestroy {
+  readonly saveState = signal("Draft recovered · All changes saved");
+  private timer?: ReturnType<typeof setTimeout>;
+  readonly outline = [
+    "Introduction",
+    "Biblical background",
+    "Main points",
+    "Applications",
+    "Prophetic insights",
+    "Altar call",
+    "Conclusion",
+    "Prayer points",
+  ];
+  readonly actions = [
+    "Expand section",
+    "Add biblical context",
+    "Add Ghanaian example",
+    "Improve transitions",
+    "Verify references",
+    "Create altar call",
+  ];
+  changed(event: Event) {
+    this.saveState.set("Saving…");
+    clearTimeout(this.timer);
+    const content = (event.target as HTMLElement).innerHTML;
+    this.timer = setTimeout(() => void this.persist(content), 500);
+  }
+  private async persist(content: string) {
+    const db = await openDB("sanctuary-drafts", 1, {
+      upgrade(database) {
+        database.createObjectStore("sermons");
+      },
+    });
+    await db.put("sermons", content, "current");
+    this.saveState.set("All changes saved locally");
+  }
+  ngOnDestroy() {
+    clearTimeout(this.timer);
+  }
+}

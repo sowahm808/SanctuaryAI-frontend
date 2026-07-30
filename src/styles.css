@@ -1,2 +1,146 @@
-@import '@ionic/angular/css/core.css';
-:root{--ink:#1e2533;--muted:#707789;--line:#e8e7ed;--violet:#5b3eb3;--violet2:#7658c8;--cream:#f7f7fa;--green:#147d64;--danger:#b42318;font-family:Inter,Avenir,"Segoe UI",ui-sans-serif,system-ui,sans-serif;color:var(--ink);background:var(--cream);font-synthesis:none}*{box-sizing:border-box}html{background:var(--cream)}body{margin:0;background:linear-gradient(145deg,#f8f8fb 0%,#f5f4f9 100%);-webkit-font-smoothing:antialiased}button,input,select,textarea{font:inherit}button{cursor:pointer}.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;padding:.72rem 1rem;font-weight:700;background:linear-gradient(135deg,var(--violet),#6949bd);color:#fff;text-decoration:none;transition:transform .15s,box-shadow .15s}.btn:hover{transform:translateY(-1px);box-shadow:0 7px 16px #40218d1f}.btn.secondary{background:#fff;color:var(--ink);border:1px solid var(--line);box-shadow:none}.icon-btn{border:1px solid var(--line);background:white;border-radius:10px;width:40px;height:40px}.card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:1.25rem;box-shadow:0 2px 5px #10182808,0 10px 26px #321d6805}.eyebrow{margin-bottom:.55rem;font-size:.68rem;text-transform:uppercase;letter-spacing:.13em;color:var(--violet);font-weight:800}.muted{color:var(--muted)}.badge{display:inline-flex;padding:.3rem .6rem;border-radius:999px;background:#eef8f4;color:var(--green);font-size:.76rem;font-weight:700}.field{display:grid;gap:.4rem}.field label{font-size:.82rem;font-weight:700}.field input,.field select,.field textarea{width:100%;border:1px solid #cfd2da;border-radius:10px;padding:.75rem;background:#fff}.field input:focus,.field textarea:focus{outline:3px solid #dcd4f7;border-color:var(--violet)}.grid{display:grid;gap:1rem}.empty{text-align:center;padding:2.5rem;color:var(--muted)}h1,h2,h3,p{margin-top:0}h1,h2,h3{color:#1d2330}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+@import "@ionic/angular/css/core.css";
+:root {
+  --ink: #1e2533;
+  --muted: #707789;
+  --line: #e8e7ed;
+  --violet: #5b3eb3;
+  --violet2: #7658c8;
+  --cream: #f7f7fa;
+  --green: #147d64;
+  --danger: #b42318;
+  font-family: Inter, Avenir, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--cream);
+}
+body {
+  margin: 0;
+  background: linear-gradient(145deg, #f8f8fb 0%, #f5f4f9 100%);
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  padding: 0.72rem 1rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--violet), #6949bd);
+  color: #fff;
+  text-decoration: none;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 16px #40218d1f;
+}
+.btn.secondary {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.icon-btn {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+}
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 1.25rem;
+  box-shadow:
+    0 2px 5px #10182808,
+    0 10px 26px #321d6805;
+}
+.eyebrow {
+  margin-bottom: 0.55rem;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--violet);
+  font-weight: 800;
+}
+.muted {
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: #eef8f4;
+  color: var(--green);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+.field label {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid #cfd2da;
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: #fff;
+}
+.field input:focus,
+.field textarea:focus {
+  outline: 3px solid #dcd4f7;
+  border-color: var(--violet);
+}
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+.empty {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--muted);
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h1,
+h2,
+h3 {
+  color: #1d2330;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}
