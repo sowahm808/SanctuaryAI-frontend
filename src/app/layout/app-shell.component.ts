@@ -1,6 +1,7 @@
-import { Component, inject, signal } from "@angular/core";
+import { Component, computed, inject, signal } from "@angular/core";
 import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { SessionService } from "../services/session.service";
+import type { Permission } from "../models/domain.models";
 
 interface NavItem {
   label: string;
@@ -8,6 +9,7 @@ interface NavItem {
   path: string;
   section?: string;
   badge?: string;
+  permission?: Permission;
 }
 
 @Component({
@@ -402,7 +404,7 @@ interface NavItem {
         ><span class="chevron">⌄</span>
       </div>
       <nav class="nav" aria-label="Primary">
-        @for (n of nav; track n.path) {
+        @for (n of visibleNav(); track n.path) {
           @if (n.section) {
             <div class="nav-label">{{ n.section }}</div>
           }
@@ -458,7 +460,7 @@ export class AppShellComponent {
   readonly initial = signal(
     this.session.user()?.name.charAt(0).toUpperCase() ?? "K",
   );
-  readonly nav: NavItem[] = [
+  readonly nav: readonly NavItem[] = [
     {
       label: "Dashboard",
       icon: "⌂",
@@ -477,10 +479,20 @@ export class AppShellComponent {
       path: "/app/workspace/themes",
       section: "Create",
     },
-    { label: "Sermons", icon: "✎", path: "/app/sermons" },
+    {
+      label: "Sermons",
+      icon: "✎",
+      path: "/app/sermons",
+      permission: "sermons.create",
+    },
     { label: "Prayer Points", icon: "♢", path: "/app/workspace/prayer-points" },
     { label: "Declarations", icon: "◈", path: "/app/workspace/declarations" },
-    { label: "Flyer Studio", icon: "▧", path: "/app/flyer-studio" },
+    {
+      label: "Flyer Studio",
+      icon: "▧",
+      path: "/app/flyer-studio",
+      permission: "flyers.edit",
+    },
     { label: "Video Studio", icon: "▶", path: "/app/workspace/videos" },
     {
       label: "Content Calendar",
@@ -488,7 +500,12 @@ export class AppShellComponent {
       path: "/app/workspace/calendar",
       section: "Publish",
     },
-    { label: "Social Publisher", icon: "◎", path: "/app/social" },
+    {
+      label: "Social Publisher",
+      icon: "◎",
+      path: "/app/social",
+      permission: "social.schedule",
+    },
     { label: "Media Library", icon: "▣", path: "/app/workspace/media" },
     {
       label: "Reviews",
@@ -498,7 +515,22 @@ export class AppShellComponent {
       badge: "6",
     },
     { label: "Analytics", icon: "↗", path: "/app/workspace/analytics" },
-    { label: "Team", icon: "♙", path: "/app/workspace/team" },
-    { label: "Church Settings", icon: "⚙", path: "/app/workspace/settings" },
+    {
+      label: "Team",
+      icon: "♙",
+      path: "/app/workspace/team",
+      permission: "users.manage",
+    },
+    {
+      label: "Church Settings",
+      icon: "⚙",
+      path: "/app/workspace/settings",
+      permission: "settings.manage",
+    },
   ];
+  readonly visibleNav = computed(() =>
+    this.nav.filter(
+      (item) => !item.permission || this.session.can(item.permission),
+    ),
+  );
 }

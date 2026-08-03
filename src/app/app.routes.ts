@@ -1,9 +1,8 @@
 import { Routes } from "@angular/router";
-import { authGuard, guestGuard } from "./guards/auth.guard";
+import { authGuard, permissionGuard } from "./guards/auth.guard";
 export const routes: Routes = [
   {
     path: "auth",
-    canActivate: [guestGuard],
     loadChildren: () =>
       import("./features/auth/auth.routes").then((m) => m.AUTH_ROUTES),
   },
@@ -37,11 +36,15 @@ export const routes: Routes = [
       },
       {
         path: "sermons",
+        canActivate: [permissionGuard],
+        data: { permissions: ["sermons.create"] },
         loadComponent: () =>
           import("./features/sermons/sermon.page").then((m) => m.SermonPage),
       },
       {
         path: "flyer-studio",
+        canActivate: [permissionGuard],
+        data: { permissions: ["flyers.edit"] },
         loadComponent: () =>
           import("./features/flyer/flyer.page").then((m) => m.FlyerPage),
       },
