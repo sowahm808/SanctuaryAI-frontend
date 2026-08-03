@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/spec",
+    "types": ["vitest/globals", "node"]
+  },
+  "files": ["src/app/guards/auth.guard.spec.ts"],
+  "include": ["src/**/*.d.ts"]
+}

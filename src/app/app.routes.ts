@@ -28,7 +28,7 @@ export const routes: Routes = [
           ),
       },
       {
-        path: "campaigns",
+        path: "monthly-campaigns",
         loadComponent: () =>
           import("./features/campaigns/campaign.page").then(
             (m) => m.CampaignPage,
@@ -49,10 +49,12 @@ export const routes: Routes = [
           import("./features/flyer/flyer.page").then((m) => m.FlyerPage),
       },
       {
-        path: "social",
+        path: "social-publisher",
         loadComponent: () =>
           import("./features/social/social.page").then((m) => m.SocialPage),
       },
+      { path: "campaigns", pathMatch: "full", redirectTo: "monthly-campaigns" },
+      { path: "social", pathMatch: "full", redirectTo: "social-publisher" },
       {
         path: "reviews",
         loadComponent: () =>

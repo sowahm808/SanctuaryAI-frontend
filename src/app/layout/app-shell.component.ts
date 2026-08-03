@@ -448,9 +448,9 @@ interface NavItem {
     </section>
     <nav class="mobile-nav" aria-label="Mobile primary">
       <a routerLink="/app/dashboard"><b>⌂</b>Home</a
-      ><a routerLink="/app/campaigns"><b>◫</b>Campaigns</a
+      ><a routerLink="/app/monthly-campaigns"><b>◫</b>Campaigns</a
       ><a routerLink="/app/sermons"><b>✎</b>Sermons</a
-      ><a routerLink="/app/social"><b>◎</b>Publish</a>
+      ><a routerLink="/app/social-publisher"><b>◎</b>Publish</a>
     </nav>
   `,
 })
@@ -470,7 +470,7 @@ export class AppShellComponent {
     {
       label: "Monthly Campaigns",
       icon: "◫",
-      path: "/app/campaigns",
+      path: "/app/monthly-campaigns",
       badge: "3",
     },
     {
@@ -503,7 +503,7 @@ export class AppShellComponent {
     {
       label: "Social Publisher",
       icon: "◎",
-      path: "/app/social",
+      path: "/app/social-publisher",
       permission: "social.schedule",
     },
     { label: "Media Library", icon: "▣", path: "/app/workspace/media" },
