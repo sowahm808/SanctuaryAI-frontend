@@ -55,18 +55,18 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ### Design system
 
-- [ ] Define SanctuaryAI identity, tagline, semantic colors, spacing, typography, elevations, borders, focus rings, breakpoints, and status colors.
+- [x] Define SanctuaryAI identity, tagline, semantic colors, spacing, typography, elevations, borders, focus rings, breakpoints, and status colors.
 - [ ] Build reusable buttons, icon buttons, cards, form fields, selects, date/time controls, dialogs, drawers, menus, tabs, steppers, tables, responsive card lists, badges, avatars, tooltips, and breadcrumbs.
-- [ ] Build reusable skeleton, progress, empty, offline, permission-denied, and error-state components.
+- [x] Build reusable skeleton, progress, empty, offline, permission-denied, and error-state components.
 - [ ] Build file upload/drop zone, media picker, scripture picker, rich-text/block editor wrapper, comment thread, version comparison, approval controls, and async-job status components.
-- [ ] Add accessible confirmation dialogs and toast/live-region notifications.
+- [x] Add accessible confirmation dialogs and toast/live-region notifications.
 - [ ] Document component usage and responsive behavior; remove duplicated UI primitives from features.
 
 ### Domain contracts and state
 
-- [ ] Model IDs, timestamps, audit metadata, organization scope, users, memberships, roles, granular permissions, and subscription state.
-- [ ] Model content lifecycle, approval lifecycle, publishing lifecycle, comments, versions, locks, assignments, and audit events.
-- [ ] Model typed API envelopes, validation errors, cursor pagination, filters, sorting, asynchronous jobs, and upload progress.
+- [x] Model IDs, timestamps, audit metadata, organization scope, users, memberships, roles, granular permissions, and subscription state.
+- [x] Model content lifecycle, approval lifecycle, publishing lifecycle, comments, versions, locks, assignments, and audit events.
+- [x] Model typed API envelopes, validation errors, cursor pagination, filters, sorting, asynchronous jobs, and upload progress.
 - [ ] Use Angular Signals for synchronous local/view state and RxJS for cancellable asynchronous workflows.
 - [ ] Create organization/session/global-notification stores with explicit loading and error states.
 
