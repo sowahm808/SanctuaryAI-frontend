@@ -76,7 +76,7 @@ import { RouterLink } from "@angular/router";
           Good morning. Here is what needs your team's attention.
         </p>
       </div>
-      <a class="btn" routerLink="/app/campaigns">+ New campaign</a>
+      <a class="btn" routerLink="/app/monthly-campaigns">+ New campaign</a>
     </header>
     <section class="grid metrics" aria-label="Operational summary">
       <div class="card metric">
@@ -107,7 +107,7 @@ import { RouterLink } from "@angular/router";
             8 of 12 assets approved · Next service Sunday, 9:00 AM
           </p>
           <div class="actions">
-            <a class="btn secondary" routerLink="/app/campaigns"
+            <a class="btn secondary" routerLink="/app/monthly-campaigns"
               >Open campaign</a
             ><a class="btn secondary" routerLink="/app/reviews"
               >Review 3 items</a
@@ -151,7 +151,9 @@ import { RouterLink } from "@angular/router";
             ><a class="btn secondary" routerLink="/app/workspace/prayer-points"
               >♢ Prayers</a
             ><a class="btn secondary" routerLink="/app/flyer-studio">▧ Flyer</a
-            ><a class="btn secondary" routerLink="/app/social">◎ Social post</a>
+            ><a class="btn secondary" routerLink="/app/social-publisher"
+              >◎ Social post</a
+            >
           </div>
         </article>
         <article class="card">

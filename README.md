@@ -12,7 +12,9 @@ npm run e2e
 npm run build
 ```
 
-Configure backend endpoints outside source control using environment replacements in deployment. OAuth credentials and refresh tokens must remain server-side. Add Capacitor targets with `npx cap add ios` / `npx cap add android`, then build and run `npx cap sync`.
+The checked-in environment files contain safe public configuration and default to the same-origin `/api` proxy. Replace them at build/deploy time for another public API base URL; never place credentials, provider tokens, signing keys, or refresh tokens in an Angular environment file. OAuth credentials and refresh tokens must remain server-side.
+
+For mobile builds, install the target package, run `npx cap add ios` or `npx cap add android`, build the web application, and then run `npx cap sync`. Configure platform deep links and backend OAuth redirect allow-lists for the application identifier before signing a release.
 
 ## Architecture
 

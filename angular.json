@@ -17,6 +17,9 @@
             "styles": ["src/styles.css"]
           },
           "configurations": {
+            "test": {
+              "tsConfig": "tsconfig.spec.json"
+            },
             "production": {
               "outputHashing": "all",
               "budgets": [
@@ -37,7 +40,14 @@
           },
           "defaultConfiguration": "development"
         },
-        "test": { "builder": "@angular/build:unit-test" }
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "sanctuary-ai:build:test",
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest"
+          }
+        }
       }
     }
   },
