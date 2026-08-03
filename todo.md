@@ -28,7 +28,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ## Audit snapshot (2026-08-03)
 
-The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, and a real Fabric.js canvas. Most product workflows remain prototypes backed by local/hardcoded data; authentication is simulated, generic `workspace/:kind` pages stand in for multiple features, API/refresh/draft-sync foundations are incomplete, and test coverage does not yet satisfy the release definition of done.
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, and a real Fabric.js canvas. Most product workflows remain prototypes backed by local/hardcoded data; authentication now uses typed, cookie-backed API contracts and complete account-access faces, while generic `workspace/:kind` pages stand in for multiple features, API/refresh/draft-sync foundations are incomplete, and test coverage does not yet satisfy the release definition of done.
 
 ## Phase 0 — Baseline audit and project foundation
 
@@ -87,17 +87,17 @@ The checked items below were reconciled against the current source, configuratio
 
 ### Authentication
 
-- [ ] Build production forms and flows for login, registration, forgot password, reset password, email verification, MFA, unauthorized access, invitation acceptance, and expired sessions.
-- [ ] Implement email/password authentication and backend-mediated Google and Microsoft sign-in.
+- [x] Build production forms and flows for login, registration, forgot password, reset password, email verification, MFA, unauthorized access, invitation acceptance, and expired sessions.
+- [x] Implement email/password authentication and backend-mediated Google and Microsoft sign-in.
 - [ ] Implement secure session restoration, access/refresh-token lifecycle, automatic refresh, explicit logout, and cross-tab session changes.
-- [ ] Never persist or display OAuth provider tokens in browser-accessible application state.
-- [ ] Provide actionable error messages without leaking account or security details.
+- [x] Never persist or display OAuth provider tokens in browser-accessible application state.
+- [x] Provide actionable error messages without leaking account or security details.
 
 ### Authorization
 
 - [x] Define roles: SuperAdministrator, ChurchAdministrator, SeniorPastor, AssociatePastor, ContentWriter, MediaTeam, Reviewer, Publisher, and Viewer.
-- [ ] Implement authentication, guest-only, role, permission, organization-setup, subscription, and unsaved-changes guards.
-- [ ] Implement reusable permission directives/components for conditional actions and navigation.
+- [x] Implement authentication, guest-only, role, permission, organization-setup, subscription, and unsaved-changes guards.
+- [x] Implement reusable permission directives/components for conditional actions and navigation.
 - [ ] Cover representative granular permissions including themes create/read/update/approve, sermons create/publish, flyers edit, social schedule/publish, users manage, and settings manage.
 - [ ] Test direct URL access, organization changes, revoked membership, expired subscription, and insufficient-permission behavior.
 

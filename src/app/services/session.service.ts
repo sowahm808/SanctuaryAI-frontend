@@ -1,51 +1,95 @@
-import { Injectable, computed, signal } from "@angular/core";
+import { Injectable, computed, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
-import type { Permission, User } from "../models/domain.models";
+import {
+  catchError,
+  finalize,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  tap,
+} from "rxjs";
+import type { Permission } from "../models/domain.models";
+import { AuthApiService, AuthSession } from "./auth-api.service";
+
 @Injectable({ providedIn: "root" })
 export class SessionService {
-  private readonly current = signal<User | null>(this.restore());
-  readonly user = this.current.asReadonly();
-  readonly authenticated = computed(() => !!this.current());
-  constructor(private readonly router: Router) {}
-  login(email: string) {
-    const user: User = {
-      id: crypto.randomUUID(),
-      name: email.split("@")[0] || "Ministry leader",
-      email,
-      permissions: new Set<Permission>([
-        "themes.create",
-        "themes.read",
-        "themes.approve",
-        "sermons.create",
-        "sermons.publish",
-        "flyers.edit",
-        "social.schedule",
-        "social.publish",
-        "users.manage",
-        "settings.manage",
-      ]),
-    };
-    this.current.set(user);
-    sessionStorage.setItem(
-      "sanctuary-session",
-      JSON.stringify({ ...user, permissions: [...user.permissions] }),
+  private readonly api = inject(AuthApiService);
+  private readonly router = inject(Router);
+  private readonly current = signal<AuthSession | null>(null);
+  private restoreRequest?: Observable<boolean>;
+  readonly session = this.current.asReadonly();
+  readonly user = computed(() => this.current()?.user ?? null);
+  readonly authenticated = computed(() => this.current() !== null);
+  readonly organizationReady = computed(
+    () => this.current()?.organizationSetupComplete ?? false,
+  );
+  readonly subscriptionActive = computed(
+    () => this.current()?.subscriptionActive ?? false,
+  );
+
+  restore(): Observable<boolean> {
+    if (this.authenticated()) return of(true);
+    this.restoreRequest ??= this.api.session().pipe(
+      tap((session) => this.setSession(session)),
+      map(() => true),
+      catchError(() => {
+        this.clear();
+        return of(false);
+      }),
+      finalize(() => {
+        this.restoreRequest = undefined;
+      }),
+      shareReplay(1),
     );
-    void this.router.navigateByUrl("/app/dashboard");
+    return this.restoreRequest;
   }
-  logout() {
-    sessionStorage.removeItem("sanctuary-session");
+  establish(session: AuthSession): void {
+    this.setSession(session);
+    this.broadcast("signed-in");
+  }
+  logout(expired = false): void {
+    this.api
+      .logout()
+      .pipe(catchError(() => of(undefined)))
+      .subscribe(() => {
+        this.clear();
+        this.broadcast("signed-out");
+        void this.router.navigate([
+          "/auth",
+          expired ? "session-expired" : "login",
+        ]);
+      });
+  }
+  can(permission: Permission): boolean {
+    return this.user()?.permissions.has(permission) ?? false;
+  }
+  hasRole(roles: readonly string[]): boolean {
+    return roles.includes(this.current()?.role ?? "");
+  }
+  private setSession(session: AuthSession): void {
+    this.current.set({
+      ...session,
+      user: { ...session.user, permissions: new Set(session.user.permissions) },
+    });
+  }
+  private clear(): void {
     this.current.set(null);
-    void this.router.navigateByUrl("/auth/login");
   }
-  can(permission: Permission) {
-    return this.current()?.permissions.has(permission) ?? false;
+  private broadcast(type: "signed-in" | "signed-out"): void {
+    localStorage.setItem(
+      "sanctuary-session-event",
+      JSON.stringify({ type, at: Date.now() }),
+    );
   }
-  private restore(): User | null {
-    const raw = sessionStorage.getItem("sanctuary-session");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Omit<User, "permissions"> & {
-      permissions: Permission[];
-    };
-    return { ...parsed, permissions: new Set(parsed.permissions) };
+  constructor() {
+    addEventListener("storage", (event) => {
+      if (event.key !== "sanctuary-session-event" || !event.newValue) return;
+      const message = JSON.parse(event.newValue) as { type: string };
+      if (message.type === "signed-out") {
+        this.clear();
+        void this.router.navigateByUrl("/auth/session-expired");
+      } else this.restore().subscribe();
+    });
   }
 }
