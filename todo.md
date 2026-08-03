@@ -5,7 +5,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 ## Status and delivery rules
 
 - [ ] Keep Angular and TypeScript strict; do not introduce `any`, suppressed compiler errors, or business logic in components.
-- [ ] Use standalone components and lazy-loaded feature routes; use an NgModule only when a third-party integration requires one.
+- [x] Use standalone components and lazy-loaded feature routes; use an NgModule only when a third-party integration requires one.
 - [ ] Keep API access in typed feature/core services, never directly in components, and never hardcode API results or expose secrets/OAuth tokens.
 - [ ] Treat AI generation, uploads, publishing, and rendering as asynchronous jobs with progress, cancellation where appropriate, retry, and meaningful failure states.
 - [ ] Preserve recoverable drafts in IndexedDB and reconcile them safely with the server.
@@ -26,19 +26,23 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ---
 
+## Audit snapshot (2026-08-03)
+
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, and a real Fabric.js canvas. Most product workflows remain prototypes backed by local/hardcoded data; authentication is simulated, generic `workspace/:kind` pages stand in for multiple features, API/refresh/draft-sync foundations are incomplete, and test coverage does not yet satisfy the release definition of done.
+
 ## Phase 0 — Baseline audit and project foundation
 
 ### Repository audit
 
-- [ ] Inventory the current routes, screens, services, models, tests, and documentation against this plan.
+- [x] Inventory the current routes, screens, services, models, tests, and documentation against this plan.
 - [ ] Replace feature naming that does not match the target architecture (`campaigns`, `flyer`, and `social`) with the canonical feature names without breaking deep links.
-- [ ] Inspect all routes, imports, standalone dependencies, strict compiler settings, build targets, and existing tests.
+- [x] Inspect all routes, imports, standalone dependencies, strict compiler settings, build targets, and existing tests.
 - [ ] Record current build/test/accessibility issues before feature development begins.
 
 ### Toolchain and configuration
 
 - [ ] Confirm Angular 20+, Ionic, Capacitor, Angular Material, Tailwind CSS, RxJS, Fabric.js or Konva.js, Chart.js or ECharts, IndexedDB, Vitest or Jasmine/Karma, and Playwright are correctly configured.
-- [ ] Configure strict TypeScript and strict Angular template checking.
+- [x] Configure strict TypeScript and strict Angular template checking.
 - [ ] Configure Tailwind content paths, design tokens, Material theme, Ionic theme variables, global typography, and reduced-motion styles.
 - [ ] Create environment templates for API base URL and safe public configuration; document secret management and environment replacement.
 - [ ] Configure production budgets, source maps, hashing, browser support, lint/static analysis, unit coverage, and CI commands.
@@ -91,7 +95,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ### Authorization
 
-- [ ] Define roles: SuperAdministrator, ChurchAdministrator, SeniorPastor, AssociatePastor, ContentWriter, MediaTeam, Reviewer, Publisher, and Viewer.
+- [x] Define roles: SuperAdministrator, ChurchAdministrator, SeniorPastor, AssociatePastor, ContentWriter, MediaTeam, Reviewer, Publisher, and Viewer.
 - [ ] Implement authentication, guest-only, role, permission, organization-setup, subscription, and unsaved-changes guards.
 - [ ] Implement reusable permission directives/components for conditional actions and navigation.
 - [ ] Cover representative granular permissions including themes create/read/update/approve, sermons create/publish, flyers edit, social schedule/publish, users manage, and settings manage.
@@ -99,7 +103,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ### Authenticated shell
 
-- [ ] Build a responsive left sidebar, top navigation, mobile bottom navigation, and page content shell.
+- [x] Build a responsive left sidebar, top navigation, mobile bottom navigation, and page content shell.
 - [ ] Add organization switcher, current church identity, global search, notifications, user menu, breadcrumbs, page title, and contextual actions.
 - [ ] Add a collapsible, keyboard-accessible AI assistant panel that preserves page working space.
 - [ ] Add permission-aware navigation for all required primary features and active-route states.
@@ -180,7 +184,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 - [ ] Build a searchable/filterable template gallery covering every required flyer type.
 - [ ] Build a creation wizard for event/content fields, logos/photos/backgrounds, style, and dimensions.
 - [ ] Support 1080x1080, 1080x1350, 1080x1920, 1200x630, 1920x1080, A4, Letter, and validated custom dimensions.
-- [ ] Integrate Fabric.js or Konva.js as a real interactive canvas rather than a static form preview.
+- [x] Integrate Fabric.js or Konva.js as a real interactive canvas rather than a static form preview.
 - [ ] Implement select, move, resize, rotate, align, group/ungroup, lock/hide, duplicate/delete, undo/redo, zoom, and layer management.
 - [ ] Implement text formatting, shapes, gradients, crop, background-removal service workflow, QR codes, safe-area guides, and snap-to-grid.
 - [ ] Add keyboard commands, accessible layer controls, selection announcements, and non-pointer alternatives for essential operations.
