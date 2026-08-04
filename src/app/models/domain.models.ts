@@ -52,16 +52,49 @@ export interface ChurchProfile {
   id: EntityId;
   name: string;
   slogan?: string;
+  description?: string;
   seniorPastor?: string;
   primaryColor?: string;
+  secondaryColor?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  bibleTranslation?: string;
+  onboardingStatus?: "not_started" | "in_progress" | "complete";
 }
 export interface CreateChurchProfileRequest {
+  setupMode: string;
+  invitationCode?: string;
   name: string;
   slogan?: string;
+  description?: string;
   seniorPastor?: string;
   primaryColor?: string;
+  secondaryColor?: string;
+  headingFont?: string;
+  bodyFont?: string;
+  primaryLogo?: string;
+  secondaryLogo?: string;
+  primaryLogoAlt?: string;
+  secondaryLogoAlt?: string;
+  logoCropInstructions?: string;
+  physicalAddress?: string;
+  digitalAddress?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  socialChannels?: string;
+  serviceDays?: string;
+  serviceTimes?: string;
   bibleTranslation?: string;
+  ministryTone?: string;
+  statementOfFaith?: string;
   doctrinalGuidelines?: string;
+  prohibitedContent?: string;
+  hashtags?: string;
+  defaultFooter?: string;
+  teamInvitations?: string;
+  socialConnectionNotes?: string;
+  firstCampaignChoice: string;
 }
 export interface Membership extends OrganizationScoped {
   id: EntityId;

@@ -32,6 +32,25 @@ export const routes: Routes = [
             (m) => m.DashboardPage,
           ),
       },
+
+      {
+        path: "church-profile",
+        canActivate: [permissionGuard],
+        data: { permissions: ["settings.manage"] },
+        loadComponent: () =>
+          import("./features/onboarding/onboarding.page").then(
+            (m) => m.OnboardingPage,
+          ),
+      },
+      {
+        path: "brand-kit",
+        canActivate: [permissionGuard],
+        data: { permissions: ["settings.manage"] },
+        loadComponent: () =>
+          import("./features/onboarding/onboarding.page").then(
+            (m) => m.OnboardingPage,
+          ),
+      },
       {
         path: "monthly-campaigns",
         loadComponent: () =>

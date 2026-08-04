@@ -2,6 +2,7 @@ import { DatePipe, TitleCasePipe } from "@angular/common";
 import { Component, DestroyRef, inject, signal } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { RouterLink } from "@angular/router";
+import { HasPermissionDirective } from "../../shared/has-permission.directive";
 import { finalize } from "rxjs";
 import { mapApiError } from "../../core/api/api-error";
 import type { ApiError } from "../../models/domain.models";
@@ -20,6 +21,7 @@ import { DashboardService } from "./dashboard.service";
     SkeletonComponent,
     StatePanelComponent,
     TitleCasePipe,
+    HasPermissionDirective,
   ],
   styles: [
     `
@@ -92,6 +94,12 @@ import { DashboardService } from "./dashboard.service";
       .status-text.danger {
         color: var(--danger);
       }
+      .stale {
+        border: 1px solid var(--warning);
+        background: #fff8e6;
+        padding: 0.8rem;
+        border-radius: 14px;
+      }
       @media (max-width: 1000px) {
         .metrics {
           grid-template-columns: repeat(2, 1fr);
@@ -137,6 +145,21 @@ import { DashboardService } from "./dashboard.service";
       />
     } @else if (summary(); as data) {
       <p class="muted">Updated {{ data.generatedAt | date: "medium" }}</p>
+      @if (data.stale) {
+        <p class="stale" role="status">
+          Showing stale dashboard data:
+          {{ data.staleReason || "latest refresh is delayed" }}
+        </p>
+      }
+      @for (issue of data.sectionIssues; track issue.section) {
+        <app-state-panel
+          state="error"
+          [title]="partialErrorTitle(issue.section)"
+          [message]="issue.message"
+          [actionLabel]="issue.retryable ? 'Retry' : ''"
+          (action)="load()"
+        />
+      }
       <section class="grid metrics" aria-label="Operational summary">
         @for (metric of data.metrics; track metric.kind) {
           <article class="card metric">
@@ -209,9 +232,12 @@ import { DashboardService } from "./dashboard.service";
                   <a [routerLink]="item.href"
                     ><b>{{ item.title }}</b
                     ><br /><small class="muted"
-                      >{{ item.type | titlecase }} · {{ item.detail }} · Updated
-                      {{ item.updatedAt | date: "short" }}</small
-                    ></a
+                      >{{ item.category | titlecase }} · {{ item.detail }} ·
+                      Updated {{ item.updatedAt | date: "short" }}
+                      @if (item.dueAt) {
+                        · Due {{ item.dueAt | date: "short" }}
+                      }
+                    </small></a
                   ><span class="badge">{{ item.status }}</span>
                 </div>
               } @empty {
@@ -222,18 +248,91 @@ import { DashboardService } from "./dashboard.service";
         </section>
         <aside class="grid">
           <article class="card">
-            <h2>Quick create</h2>
+            <h2>Permission-aware quick actions</h2>
             <div class="actions">
-              <a class="btn secondary" routerLink="/app/themes">✦ Theme</a
-              ><a class="btn secondary" routerLink="/app/sermons">✎ Sermon</a
-              ><a class="btn secondary" routerLink="/app/prayer-points"
-                >♢ Prayers</a
-              ><a class="btn secondary" routerLink="/app/flyer-studio"
-                >▧ Flyer</a
-              ><a class="btn secondary" routerLink="/app/social-publisher"
-                >◎ Social post</a
-              >
+              @for (action of data.quickActions; track action.href) {
+                <a
+                  *appHasPermission="action.permission"
+                  class="btn secondary"
+                  [routerLink]="action.href"
+                  >{{ action.icon }} {{ action.label }}</a
+                >
+              } @empty {
+                <p class="muted">
+                  No actions are available for your permissions.
+                </p>
+              }
             </div>
+          </article>
+          <article class="card">
+            <h2>Publishing queue</h2>
+            <div class="list">
+              @for (post of data.scheduledPosts; track post.id) {
+                <div class="item">
+                  <a [routerLink]="post.href"
+                    ><b>{{ post.title }}</b
+                    ><br /><small class="muted"
+                      >{{ post.provider | titlecase }} · Scheduled
+                      {{ post.scheduledFor | date: "short" }}</small
+                    ></a
+                  ><span class="badge">Scheduled</span>
+                </div>
+              } @empty {
+                <p class="muted">No scheduled posts.</p>
+              }
+              @for (failure of data.publishingFailures; track failure.id) {
+                <div class="item">
+                  <a [routerLink]="failure.retryHref"
+                    ><b>{{ failure.title }}</b
+                    ><br /><small class="muted"
+                      >{{ failure.provider | titlecase }} failed
+                      {{ failure.failedAt | date: "short" }} ·
+                      {{ failure.reason }}</small
+                    ></a
+                  ><a class="btn secondary" [routerLink]="failure.retryHref"
+                    >Recover</a
+                  >
+                </div>
+              }
+            </div>
+          </article>
+          <article class="card">
+            <h2>Recent content</h2>
+            <div class="list">
+              @for (content of data.recentContent; track content.id) {
+                <div class="item">
+                  <a [routerLink]="content.href"
+                    ><b>{{ content.title }}</b
+                    ><br /><small class="muted"
+                      >{{ content.kind | titlecase }} ·
+                      {{ content.contextLabel }} ·
+                      {{ content.occurredAt | date: "short" }}</small
+                    ></a
+                  >
+                </div>
+              } @empty {
+                <p class="muted">No recent flyers or sermons.</p>
+              }
+            </div>
+          </article>
+          <article class="card">
+            <h2>AI usage</h2>
+            @if (data.aiUsage; as usage) {
+              <strong
+                >{{ usage.generationsUsed }} /
+                {{ usage.generationLimit }}</strong
+              >
+              <p class="muted">
+                {{ usage.periodLabel }} · {{ usage.contextLabel }}
+                @if (usage.resetAt) {
+                  · Resets {{ usage.resetAt | date: "mediumDate" }}
+                }
+              </p>
+            } @else {
+              <p class="muted">
+                No AI usage has been recorded for this period.
+              </p>
+            }
           </article>
           <article class="card">
             <h2>Connected channels</h2>
@@ -248,6 +347,13 @@ import { DashboardService } from "./dashboard.service";
                   ><span [class]="'status-text ' + channel.status">{{
                     channel.statusLabel
                   }}</span>
+                  @if (channel.reconnectHref) {
+                    <a
+                      class="btn secondary"
+                      [routerLink]="channel.reconnectHref"
+                      >Reconnect</a
+                    >
+                  }
                 </div>
               } @empty {
                 <p class="muted">No social accounts connected.</p>
@@ -287,6 +393,10 @@ export class DashboardPage {
           this.error.set(mapApiError(error));
         },
       });
+  }
+
+  partialErrorTitle(section: string): string {
+    return `${section} needs attention`;
   }
 
   campaignProgress(approved: number, total: number): number {
