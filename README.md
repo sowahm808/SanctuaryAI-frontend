@@ -26,4 +26,7 @@ For mobile builds, install the target package, run `npx cap add ios` or `npx cap
 
 See [architecture and API notes](docs/ARCHITECTURE.md), the
 [backend authentication integration guide](docs/BACKEND_AUTH_GUIDE.md), and
+[backend delivery guide](docs/BACKEND_DELIVERY_GUIDE.md). The current gaps and
+ordered follow-up work are recorded in the
+[2026-08-04 delivery audit](docs/AUDIT_2026-08-04.md); see also the
 [accessibility notes](docs/ACCESSIBILITY.md).

@@ -35,6 +35,23 @@ export const routes: Routes = [
           ),
       },
       {
+        path: "themes",
+        canActivate: [permissionGuard],
+        data: { permissions: ["themes.read"], kind: "themes" },
+        loadComponent: () =>
+          import("./features/workspace/workspace.page").then(
+            (m) => m.WorkspacePage,
+          ),
+      },
+      {
+        path: "prayer-points",
+        data: { kind: "prayer-points" },
+        loadComponent: () =>
+          import("./features/workspace/workspace.page").then(
+            (m) => m.WorkspacePage,
+          ),
+      },
+      {
         path: "sermons",
         canActivate: [permissionGuard],
         data: { permissions: ["sermons.create"] },
@@ -55,6 +72,12 @@ export const routes: Routes = [
       },
       { path: "campaigns", pathMatch: "full", redirectTo: "monthly-campaigns" },
       { path: "social", pathMatch: "full", redirectTo: "social-publisher" },
+      { path: "workspace/themes", pathMatch: "full", redirectTo: "themes" },
+      {
+        path: "workspace/prayer-points",
+        pathMatch: "full",
+        redirectTo: "prayer-points",
+      },
       {
         path: "reviews",
         loadComponent: () =>
