@@ -1,8 +1,9 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
-import { Observable, map } from "rxjs";
+import { Observable, map, of, switchMap } from "rxjs";
 import type { Permission, Role, User } from "../models/domain.models";
 import { environment } from "../../environments/environment";
+import { normalizeFirebaseExchange } from "./auth-result";
 
 export interface AuthSession {
   user: User;
@@ -95,12 +96,29 @@ export class AuthApiService {
   }
   exchangeFirebaseToken(idToken: string): Observable<AuthResult> {
     return this.http
-      .post<AuthResult | ApiEnvelope<AuthResult>>(
+      .post<AuthResult | AuthSession | ApiEnvelope<AuthResult | AuthSession>>(
         `${this.baseUrl}/firebase`,
         { idToken },
         { withCredentials: true },
       )
-      .pipe(map(unwrapData));
+      .pipe(
+        map(unwrapData),
+        switchMap((response) => {
+          const result = normalizeFirebaseExchange(response);
+
+          // Some API deployments only set the session cookie and return a
+          // success acknowledgement. Read that newly-created session rather
+          // than leaving the login page waiting for an AuthResult body.
+          return result
+            ? of(result)
+            : this.session().pipe(
+                map((session): AuthResult => ({
+                  status: "authenticated",
+                  session,
+                })),
+              );
+        }),
+      );
   }
 }
 
