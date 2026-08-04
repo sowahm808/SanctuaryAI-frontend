@@ -11,11 +11,13 @@ import {
 } from "rxjs";
 import type { Permission } from "../models/domain.models";
 import { AuthApiService, AuthSession } from "./auth-api.service";
+import { FirebaseAuthService } from "./firebase-auth.service";
 
 @Injectable({ providedIn: "root" })
 export class SessionService {
   private readonly api = inject(AuthApiService);
   private readonly router = inject(Router);
+  private readonly firebase = inject(FirebaseAuthService);
   private readonly current = signal<AuthSession | null>(null);
   private restoreRequest?: Observable<boolean>;
   readonly session = this.current.asReadonly();
@@ -53,6 +55,7 @@ export class SessionService {
       .logout()
       .pipe(catchError(() => of(undefined)))
       .subscribe(() => {
+        void this.firebase.logout().catch(() => undefined);
         this.clear();
         this.broadcast("signed-out");
         void this.router.navigate([

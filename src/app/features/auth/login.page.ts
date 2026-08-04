@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from "@angular/common/http";
 import { Component, computed, inject, input, signal } from "@angular/core";
 import {
   FormControl,
@@ -7,9 +6,18 @@ import {
   Validators,
 } from "@angular/forms";
 import { ActivatedRoute, Router, RouterLink } from "@angular/router";
-import { EMPTY, Observable, catchError, finalize, tap } from "rxjs";
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  finalize,
+  from,
+  switchMap,
+  tap,
+} from "rxjs";
 import { AuthApiService, AuthResult } from "../../services/auth-api.service";
 import { SessionService } from "../../services/session.service";
+import { FirebaseAuthService } from "../../services/firebase-auth.service";
 
 type AuthMode =
   | "login"
@@ -101,7 +109,7 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
       }
       .social {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         gap: 0.7rem;
       }
       .error-box,
@@ -232,15 +240,10 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
                 <button
                   type="button"
                   class="btn secondary"
-                  (click)="provider('google')"
+                  [disabled]="loading()"
+                  (click)="google()"
                 >
-                  Continue with Google</button
-                ><button
-                  type="button"
-                  class="btn secondary"
-                  (click)="provider('microsoft')"
-                >
-                  Continue with Microsoft
+                  Continue with Google
                 </button>
               </div>
               <div class="links">
@@ -262,6 +265,7 @@ export class LoginPage {
   readonly mode = input("login");
   private readonly api = inject(AuthApiService);
   private readonly session = inject(SessionService);
+  private readonly firebase = inject(FirebaseAuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   readonly loading = signal(false);
@@ -338,18 +342,22 @@ export class LoginPage {
     const v = this.form.getRawValue(),
       m = this.modeValue();
     let request: Observable<unknown>;
-    if (m === "login" || m === "session-expired") request = this.api.login(v);
-    else if (m === "register") request = this.api.register(v);
+    if (m === "login" || m === "session-expired")
+      request = from(this.firebase.login(v.email, v.password)).pipe(
+        switchMap((idToken) => this.api.exchangeFirebaseToken(idToken)),
+      );
+    else if (m === "register")
+      request = from(this.firebase.register(v.name, v.email, v.password)).pipe(
+        switchMap((idToken) => this.api.exchangeFirebaseToken(idToken)),
+      );
     else if (m === "forgot-password")
-      request = this.api
-        .requestPasswordReset(v.email)
-        .pipe(
-          tap(() =>
-            this.success.set(
-              "If the address is eligible, reset instructions are on the way.",
-            ),
+      request = from(this.firebase.requestPasswordReset(v.email)).pipe(
+        tap(() =>
+          this.success.set(
+            "If the address is eligible, reset instructions are on the way.",
           ),
-        );
+        ),
+      );
     else if (m === "reset-password")
       request = this.api
         .resetPassword(this.token(), v.password)
@@ -388,27 +396,28 @@ export class LoginPage {
           )
             this.handleResult(result as AuthResult);
         }),
-        catchError((e: HttpErrorResponse) => {
-          this.error.set(
-            e.status === 429
-              ? "Too many attempts. Wait a moment and try again."
-              : e.status === 0
-                ? "We couldn’t reach SanctuaryAI. Check your connection and try again."
-                : "We couldn’t complete that request. Check your details or contact your administrator.",
-          );
+        catchError((error: unknown) => {
+          this.error.set(this.authErrorMessage(error));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),
       )
       .subscribe();
   }
-  provider(provider: "google" | "microsoft") {
-    location.assign(
-      this.api.providerUrl(
-        provider,
-        this.route.snapshot.queryParamMap.get("returnTo") || "/app/dashboard",
-      ),
-    );
+  google() {
+    this.loading.set(true);
+    this.error.set("");
+    from(this.firebase.google())
+      .pipe(
+        switchMap((idToken) => this.api.exchangeFirebaseToken(idToken)),
+        tap((result) => this.handleResult(result)),
+        catchError((error: unknown) => {
+          this.error.set(this.authErrorMessage(error));
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe();
   }
   private token() {
     return this.route.snapshot.queryParamMap.get("token") || "";
@@ -428,5 +437,28 @@ export class LoginPage {
         queryParams: { challenge: result.challengeId },
       });
     } else void this.router.navigateByUrl("/auth/verify-email");
+  }
+  private authErrorMessage(error: unknown): string {
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String(error.code)
+        : "";
+    if (code === "auth/popup-closed-by-user")
+      return "Google sign-in was cancelled. Please try again when you’re ready.";
+    if (code === "auth/account-exists-with-different-credential")
+      return "An account already exists with this email. Sign in using its original method.";
+    if (code === "auth/email-already-in-use")
+      return "An account already exists with this email. Sign in instead.";
+    if (code === "auth/invalid-credential")
+      return "The email or password is incorrect.";
+    const status =
+      typeof error === "object" && error !== null && "status" in error
+        ? Number(error.status)
+        : undefined;
+    if (status === 429)
+      return "Too many attempts. Wait a moment and try again.";
+    if (status === 0)
+      return "We couldn’t reach SanctuaryAI. Check your connection and try again.";
+    return "We couldn’t complete sign-in. Check your connection and try again.";
   }
 }
