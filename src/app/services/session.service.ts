@@ -23,9 +23,13 @@ export class SessionService {
   readonly session = this.current.asReadonly();
   readonly user = computed(() => this.current()?.user ?? null);
   readonly authenticated = computed(() => this.current() !== null);
-  readonly organizationReady = computed(
-    () => this.current()?.organizationSetupComplete ?? false,
-  );
+  readonly organizationReady = computed(() => {
+    const session = this.current();
+    return (
+      session?.organizationSetupComplete === true ||
+      Boolean(session?.organizationId)
+    );
+  });
   readonly subscriptionActive = computed(
     () => this.current()?.subscriptionActive ?? false,
   );
@@ -51,19 +55,16 @@ export class SessionService {
 
   restore(): Observable<boolean> {
     if (this.authenticated()) return of(true);
-    this.restoreRequest ??= this.api.session().pipe(
-      tap((session) => this.setSession(session)),
-      map(() => true),
-      catchError(() => {
-        this.clear();
-        return of(false);
-      }),
+    this.restoreRequest ??= this.readSession().pipe(
       finalize(() => {
         this.restoreRequest = undefined;
       }),
       shareReplay(1),
     );
     return this.restoreRequest;
+  }
+  refresh(): Observable<boolean> {
+    return this.readSession();
   }
   establish(session: AuthSession): void {
     this.setSession(session);
@@ -88,6 +89,16 @@ export class SessionService {
   }
   hasRole(roles: readonly string[]): boolean {
     return roles.includes(this.current()?.role ?? "");
+  }
+  private readSession(): Observable<boolean> {
+    return this.api.session().pipe(
+      tap((session) => this.setSession(session)),
+      map(() => true),
+      catchError(() => {
+        this.clear();
+        return of(false);
+      }),
+    );
   }
   private setSession(session: AuthSession): void {
     this.current.set({

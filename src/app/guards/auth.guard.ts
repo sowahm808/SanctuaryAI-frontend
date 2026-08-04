@@ -7,17 +7,15 @@ import { SessionService } from "../services/session.service";
 export const authGuard: CanActivateFn = (_, state) => {
   const session = inject(SessionService),
     router = inject(Router);
-  return session
-    .restore()
-    .pipe(
-      map(
-        (ok) =>
-          ok ||
-          router.createUrlTree(["/auth/login"], {
-            queryParams: { returnTo: state.url },
-          }),
-      ),
-    );
+  return session.restore().pipe(
+    map(
+      (ok) =>
+        ok ||
+        router.createUrlTree(["/auth/login"], {
+          queryParams: { returnTo: state.url },
+        }),
+    ),
+  );
 };
 export const guestGuard: CanActivateFn = () => {
   const session = inject(SessionService),
@@ -43,6 +41,9 @@ export const roleGuard: CanActivateFn = (route) => {
     inject(Router).createUrlTree(["/auth/unauthorized"])
   );
 };
+export const onboardingGuard: CanActivateFn = () =>
+  !inject(SessionService).organizationReady() ||
+  inject(Router).createUrlTree(["/app/dashboard"]);
 export const organizationSetupGuard: CanActivateFn = () =>
   inject(SessionService).organizationReady() ||
   inject(Router).createUrlTree(["/onboarding"]);
