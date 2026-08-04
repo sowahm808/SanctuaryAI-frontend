@@ -1,7 +1,9 @@
 export const environment = {
   production: true,
 
-  apiBaseUrl: "https://sanctuaryai-backend.onrender.com/api/v1",
+  // Authentication uses secure cookies, so requests must go through the
+  // same-origin hosting proxy instead of directly to the API origin.
+  apiBaseUrl: "/api",
 
   firebase: {
     apiKey: "AIzaSyALqzi7ibS4kQPX2q5ukosFhSRdem7U2Vc",

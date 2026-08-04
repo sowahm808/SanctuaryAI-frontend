@@ -34,6 +34,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": { "buildTarget": "sanctuary-ai:build:production" },
             "development": { "buildTarget": "sanctuary-ai:build" }
