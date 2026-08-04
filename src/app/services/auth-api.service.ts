@@ -1,7 +1,8 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
-import { Observable } from "rxjs";
+import { Observable, map } from "rxjs";
 import type { Permission, Role, User } from "../models/domain.models";
+import { environment } from "../../environments/environment";
 
 export interface AuthSession {
   user: User;
@@ -28,45 +29,48 @@ export interface Registration extends Credentials {
 @Injectable({ providedIn: "root" })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiBaseUrl}/auth`;
   session(): Observable<AuthSession> {
-    return this.http.get<AuthSession>("/api/auth/session", {
-      withCredentials: true,
-    });
+    return this.http
+      .get<AuthSession | ApiEnvelope<AuthSession>>(`${this.baseUrl}/session`, {
+        withCredentials: true,
+      })
+      .pipe(map(unwrapData));
   }
   login(body: Credentials): Observable<AuthResult> {
-    return this.http.post<AuthResult>("/api/auth/login", body, {
+    return this.http.post<AuthResult>(`${this.baseUrl}/login`, body, {
       withCredentials: true,
     });
   }
   register(body: Registration): Observable<AuthResult> {
-    return this.http.post<AuthResult>("/api/auth/register", body, {
+    return this.http.post<AuthResult>(`${this.baseUrl}/register`, body, {
       withCredentials: true,
     });
   }
   requestPasswordReset(email: string): Observable<void> {
     return this.http.post<void>(
-      "/api/auth/password/forgot",
+      `${this.baseUrl}/password/forgot`,
       { email },
       { withCredentials: true },
     );
   }
   resetPassword(token: string, password: string): Observable<void> {
     return this.http.post<void>(
-      "/api/auth/password/reset",
+      `${this.baseUrl}/password/reset`,
       { token, password },
       { withCredentials: true },
     );
   }
   verifyEmail(token: string): Observable<void> {
     return this.http.post<void>(
-      "/api/auth/email/verify",
+      `${this.baseUrl}/email/verify`,
       { token },
       { withCredentials: true },
     );
   }
   verifyMfa(challengeId: string, code: string): Observable<AuthSession> {
     return this.http.post<AuthSession>(
-      "/api/auth/mfa/verify",
+      `${this.baseUrl}/mfa/verify`,
       { challengeId, code },
       { withCredentials: true },
     );
@@ -77,21 +81,38 @@ export class AuthApiService {
     password: string,
   ): Observable<AuthResult> {
     return this.http.post<AuthResult>(
-      "/api/auth/invitations/accept",
+      `${this.baseUrl}/invitations/accept`,
       { token, name, password },
       { withCredentials: true },
     );
   }
   logout(): Observable<void> {
     return this.http.post<void>(
-      "/api/auth/logout",
+      `${this.baseUrl}/logout`,
       {},
       { withCredentials: true },
     );
   }
-  providerUrl(provider: "google" | "microsoft", returnTo: string): string {
-    return `/api/auth/oauth/${provider}/start?returnTo=${encodeURIComponent(returnTo)}`;
+  exchangeFirebaseToken(idToken: string): Observable<AuthResult> {
+    return this.http
+      .post<AuthResult | ApiEnvelope<AuthResult>>(
+        `${this.baseUrl}/firebase`,
+        { idToken },
+        { withCredentials: true },
+      )
+      .pipe(map(unwrapData));
   }
+}
+
+interface ApiEnvelope<T> {
+  data: T;
+  correlationId: string;
+}
+
+function unwrapData<T>(response: T | ApiEnvelope<T>): T {
+  return typeof response === "object" && response !== null && "data" in response
+    ? (response as ApiEnvelope<T>).data
+    : (response as T);
 }
 
 export const EMPTY_PERMISSIONS: ReadonlySet<Permission> = new Set<Permission>();
