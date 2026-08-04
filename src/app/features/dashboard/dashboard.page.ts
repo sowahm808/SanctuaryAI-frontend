@@ -1,53 +1,96 @@
-import { Component } from "@angular/core";
+import { DatePipe, TitleCasePipe } from "@angular/common";
+import { Component, DestroyRef, inject, signal } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { RouterLink } from "@angular/router";
+import { finalize } from "rxjs";
+import { mapApiError } from "../../core/api/api-error";
+import type { ApiError } from "../../models/domain.models";
+import {
+  SkeletonComponent,
+  StatePanelComponent,
+} from "../../shared/platform-ui.component";
+import type { DashboardSummary } from "./dashboard.models";
+import { DashboardService } from "./dashboard.service";
+
 @Component({
   standalone: true,
-  imports: [RouterLink],
+  imports: [
+    DatePipe,
+    RouterLink,
+    SkeletonComponent,
+    StatePanelComponent,
+    TitleCasePipe,
+  ],
   styles: [
     `
-      .head {
+      .head,
+      .item,
+      .metric-head {
         display: flex;
         justify-content: space-between;
-        align-items: end;
         gap: 1rem;
+      }
+      .head {
+        align-items: end;
       }
       .metrics {
         grid-template-columns: repeat(4, 1fr);
         margin: 1.5rem 0;
       }
       .metric strong {
-        font-size: 1.8rem;
         display: block;
+        font-size: 1.8rem;
       }
       .layout {
         grid-template-columns: 2fr 1fr;
       }
       .progress {
         height: 8px;
-        background: #eee;
-        border-radius: 9px;
         overflow: hidden;
+        border-radius: 9px;
+        background: #eee;
       }
       .progress i {
         display: block;
-        width: 68%;
         height: 100%;
         background: var(--violet);
       }
       .actions {
         display: flex;
-        gap: 0.6rem;
         flex-wrap: wrap;
+        gap: 0.6rem;
       }
       .list {
         display: grid;
         gap: 0.7rem;
       }
       .item {
+        align-items: center;
         padding: 0.8rem 0;
         border-bottom: 1px solid var(--line);
-        display: flex;
-        justify-content: space-between;
+      }
+      .item:last-child {
+        border-bottom: 0;
+      }
+      .item a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .skeletons {
+        margin-top: 1.5rem;
+      }
+      .skeleton-card {
+        min-height: 115px;
+      }
+      .status-text {
+        font-weight: 700;
+      }
+      .status-text.warning {
+        color: var(--warning);
+      }
+      .status-text.disconnected,
+      .status-text.danger {
+        color: var(--danger);
       }
       @media (max-width: 1000px) {
         .metrics {
@@ -68,110 +111,185 @@ import { RouterLink } from "@angular/router";
       }
     `,
   ],
-  template: ` <header class="head">
+  template: `
+    <header class="head">
       <div>
-        <p class="eyebrow">Thursday, 30 July</p>
+        <p class="eyebrow">Ministry operations</p>
         <h1>Ministry command center</h1>
-        <p class="muted">
-          Good morning. Here is what needs your team's attention.
-        </p>
+        <p class="muted">Live work that needs your team's attention.</p>
       </div>
       <a class="btn" routerLink="/app/monthly-campaigns">+ New campaign</a>
     </header>
-    <section class="grid metrics" aria-label="Operational summary">
-      <div class="card metric">
-        <span class="muted">Awaiting review</span><strong>6</strong
-        ><span class="badge">2 due today</span>
-      </div>
-      <div class="card metric">
-        <span class="muted">Ready to schedule</span><strong>12</strong
-        ><span class="muted">Across 3 campaigns</span>
-      </div>
-      <div class="card metric">
-        <span class="muted">Scheduled this week</span><strong>18</strong
-        ><span class="badge">On track</span>
-      </div>
-      <div class="card metric">
-        <span class="muted">Publishing issues</span><strong>1</strong
-        ><span style="color:var(--danger)">Instagram reconnect needed</span>
-      </div>
-    </section>
-    <div class="grid layout">
-      <section class="grid">
-        <article class="card">
-          <p class="eyebrow">July campaign</p>
-          <h2>Walking in Kingdom Authority</h2>
-          <p>Luke 10:19 · 4-week teaching series</p>
-          <div class="progress"><i></i></div>
-          <p class="muted" style="margin-top:.7rem">
-            8 of 12 assets approved · Next service Sunday, 9:00 AM
-          </p>
-          <div class="actions">
-            <a class="btn secondary" routerLink="/app/monthly-campaigns"
-              >Open campaign</a
-            ><a class="btn secondary" routerLink="/app/reviews"
-              >Review 3 items</a
-            >
-          </div>
-        </article>
-        <article class="card">
-          <h2>Work in progress</h2>
-          <div class="list">
-            <div class="item">
-              <span
-                ><b>The Authority of the Believer</b><br /><small class="muted"
-                  >Sermon · autosaved 8 min ago</small
-                ></span
-              ><span class="badge">Draft</span>
-            </div>
-            <div class="item">
-              <span
-                ><b>August prayer collection</b><br /><small class="muted"
-                  >18 prayer points</small
-                ></span
-              ><span class="badge">Review</span>
-            </div>
-            <div class="item">
-              <span
-                ><b>Youth Encounter flyer</b><br /><small class="muted"
-                  >1080 × 1350</small
-                ></span
-              ><span class="badge">Approved</span>
-            </div>
-          </div>
-        </article>
+
+    @if (loading()) {
+      <section class="grid metrics skeletons" aria-label="Loading dashboard">
+        @for (item of skeletonItems; track item) {
+          <div class="card skeleton-card"><app-skeleton /></div>
+        }
       </section>
-      <aside class="grid">
-        <article class="card">
-          <h2>Quick create</h2>
-          <div class="actions">
-            <a class="btn secondary" routerLink="/app/workspace/themes"
-              >✦ Theme</a
-            ><a class="btn secondary" routerLink="/app/sermons">✎ Sermon</a
-            ><a class="btn secondary" routerLink="/app/workspace/prayer-points"
-              >♢ Prayers</a
-            ><a class="btn secondary" routerLink="/app/flyer-studio">▧ Flyer</a
-            ><a class="btn secondary" routerLink="/app/social-publisher"
-              >◎ Social post</a
-            >
-          </div>
-        </article>
-        <article class="card">
-          <h2>Connected channels</h2>
-          <div class="list">
-            <div class="item">
-              <span>Facebook</span><span class="badge">Healthy</span>
+    } @else if (error(); as failure) {
+      <app-state-panel
+        [state]="failure.code === 'http_0' ? 'offline' : 'error'"
+        title="Dashboard unavailable"
+        [message]="failure.message"
+        actionLabel="Try again"
+        (action)="load()"
+      />
+    } @else if (summary(); as data) {
+      <p class="muted">Updated {{ data.generatedAt | date: "medium" }}</p>
+      <section class="grid metrics" aria-label="Operational summary">
+        @for (metric of data.metrics; track metric.kind) {
+          <article class="card metric">
+            <span class="muted">{{ metric.label }}</span
+            ><strong>{{ metric.value }}</strong>
+            <span [class]="'status-text ' + metric.severity">{{
+              metric.context
+            }}</span>
+          </article>
+        } @empty {
+          <p class="muted">No operational metrics are available.</p>
+        }
+      </section>
+      <div class="grid layout">
+        <section class="grid">
+          @if (data.currentCampaign; as campaign) {
+            <article class="card">
+              <p class="eyebrow">{{ campaign.monthLabel }} campaign</p>
+              <h2>{{ campaign.title }}</h2>
+              @if (campaign.scriptureReference) {
+                <p>{{ campaign.scriptureReference }}</p>
+              }
+              <div
+                class="progress"
+                role="progressbar"
+                aria-label="Campaign assets approved"
+                aria-valuemin="0"
+                [attr.aria-valuemax]="campaign.totalAssets"
+                [attr.aria-valuenow]="campaign.approvedAssets"
+              >
+                <i
+                  [style.width.%]="
+                    campaignProgress(
+                      campaign.approvedAssets,
+                      campaign.totalAssets
+                    )
+                  "
+                ></i>
+              </div>
+              <p class="muted">
+                {{ campaign.approvedAssets }} of
+                {{ campaign.totalAssets }} assets approved
+                @if (campaign.nextServiceAt) {
+                  · Next service {{ campaign.nextServiceAt | date: "medium" }}
+                }
+              </p>
+              <div class="actions">
+                <a class="btn secondary" routerLink="/app/monthly-campaigns"
+                  >Open campaign</a
+                >
+                @if (campaign.reviewCount > 0) {
+                  <a class="btn secondary" routerLink="/app/reviews"
+                    >Review {{ campaign.reviewCount }} items</a
+                  >
+                }
+              </div>
+            </article>
+          } @else {
+            <app-state-panel
+              state="empty"
+              title="No active campaign"
+              message="Create a monthly campaign to coordinate ministry content."
+            />
+          }
+          <article class="card">
+            <h2>Work in progress</h2>
+            <div class="list">
+              @for (item of data.workItems; track item.id) {
+                <div class="item">
+                  <a [routerLink]="item.href"
+                    ><b>{{ item.title }}</b
+                    ><br /><small class="muted"
+                      >{{ item.type | titlecase }} · {{ item.detail }} · Updated
+                      {{ item.updatedAt | date: "short" }}</small
+                    ></a
+                  ><span class="badge">{{ item.status }}</span>
+                </div>
+              } @empty {
+                <p class="muted">No active work items.</p>
+              }
             </div>
-            <div class="item">
-              <span>Instagram</span
-              ><span style="color:var(--danger)">Expires soon</span>
+          </article>
+        </section>
+        <aside class="grid">
+          <article class="card">
+            <h2>Quick create</h2>
+            <div class="actions">
+              <a class="btn secondary" routerLink="/app/themes">✦ Theme</a
+              ><a class="btn secondary" routerLink="/app/sermons">✎ Sermon</a
+              ><a class="btn secondary" routerLink="/app/prayer-points"
+                >♢ Prayers</a
+              ><a class="btn secondary" routerLink="/app/flyer-studio"
+                >▧ Flyer</a
+              ><a class="btn secondary" routerLink="/app/social-publisher"
+                >◎ Social post</a
+              >
             </div>
-            <div class="item">
-              <span>TikTok</span><span class="badge">Healthy</span>
+          </article>
+          <article class="card">
+            <h2>Connected channels</h2>
+            <div class="list">
+              @for (channel of data.channels; track channel.id) {
+                <div class="item">
+                  <span
+                    >{{ channel.displayName }}
+                    <small class="muted">{{
+                      channel.provider | titlecase
+                    }}</small></span
+                  ><span [class]="'status-text ' + channel.status">{{
+                    channel.statusLabel
+                  }}</span>
+                </div>
+              } @empty {
+                <p class="muted">No social accounts connected.</p>
+              }
             </div>
-          </div>
-        </article>
-      </aside>
-    </div>`,
+          </article>
+        </aside>
+      </div>
+    }
+  `,
 })
-export class DashboardPage {}
+export class DashboardPage {
+  private readonly dashboard = inject(DashboardService);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly summary = signal<DashboardSummary | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal<ApiError | null>(null);
+  readonly skeletonItems = [1, 2, 3, 4] as const;
+
+  constructor() {
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.dashboard
+      .summary()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe({
+        next: (summary) => this.summary.set(summary),
+        error: (error: unknown) => {
+          this.summary.set(null);
+          this.error.set(mapApiError(error));
+        },
+      });
+  }
+
+  campaignProgress(approved: number, total: number): number {
+    return total > 0 ? Math.min(100, Math.max(0, (approved / total) * 100)) : 0;
+  }
+}

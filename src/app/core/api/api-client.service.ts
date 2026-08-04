@@ -11,6 +11,7 @@ import { environment } from "../../../environments/environment";
 
 export const API_GROUPS = [
   "organizations",
+  "dashboard",
   "themes",
   "campaigns",
   "sermons",
@@ -46,6 +47,15 @@ export class ApiClientService {
   get<T>(group: ApiGroup, id: EntityId): Observable<ApiResponse<T>> {
     return this.http.get<ApiResponse<T>>(
       `${this.url(group)}/${encodeURIComponent(id)}`,
+      { withCredentials: true },
+    );
+  }
+  getSingleton<T>(
+    group: ApiGroup,
+    resource: string,
+  ): Observable<ApiResponse<T>> {
+    return this.http.get<ApiResponse<T>>(
+      `${this.url(group)}/${encodeURIComponent(resource)}`,
       { withCredentials: true },
     );
   }
