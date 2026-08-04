@@ -134,21 +134,21 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 5 — Monthly campaign builder
 
-- [ ] Build a typed, resumable multi-step campaign wizard for month/year, spiritual focus, scriptures, Sundays, events, tone, prayer quantity, and Bible translation.
-- [ ] Validate calendar constraints, scripture inputs, event dates, and prayer quantity.
-- [ ] Display status and ownership for theme, pastoral introduction, objectives, declaration, prayers, sermon series, flyer plan, social plan, video plan, and publishing calendar.
-- [ ] Implement generate-all and per-section generation as observable async jobs with progress and safe retry.
-- [ ] Support regeneration with explicit scope, preserved prior versions, and compare-before-replace behavior.
-- [ ] Support editing, autosaved drafts, version comparison, review submission, individual approval, approved-section locking, duplication, and archival.
-- [ ] Prevent unauthorized edits to locked sections and record lifecycle actions in audit history.
+- [x] Build a typed, resumable multi-step campaign wizard for month/year, spiritual focus, scriptures, Sundays, events, tone, prayer quantity, and Bible translation.
+- [x] Validate calendar constraints, scripture inputs, event dates, and prayer quantity.
+- [x] Display status and ownership for theme, pastoral introduction, objectives, declaration, prayers, sermon series, flyer plan, social plan, video plan, and publishing calendar.
+- [x] Implement generate-all and per-section generation as observable async jobs with progress and safe retry.
+- [x] Support regeneration with explicit scope, preserved prior versions, and compare-before-replace behavior.
+- [x] Support editing, autosaved drafts, version comparison, review submission, individual approval, approved-section locking, duplication, and archival.
+- [x] Prevent unauthorized edits to locked sections and record lifecycle actions in audit history.
 
 ## Phase 6 — Theme generator
 
-- [ ] Build the typed input form for date, topic, scriptures, spiritual emphasis, pastor notes, previous theme, events, tone, and audience.
-- [ ] Implement generation progress, cancellation/retry, preview, version history, reviewer comments, and approval state.
-- [ ] Render all required outputs: title, subtitle, scriptures, explanation, pastoral introduction, objectives, weekly direction, confession, declaration, hashtags, flyer headline, and design concept.
-- [ ] Implement prophetic, pastoral, simplify, add-scriptures, shorten, expand, and alternative-generation refinements without overwriting approved content.
-- [ ] Support save as template and submit for approval with version/audit metadata.
+- [x] Build the typed input form for date, topic, scriptures, spiritual emphasis, pastor notes, previous theme, events, tone, and audience.
+- [x] Implement generation progress, cancellation/retry, preview, version history, reviewer comments, and approval state.
+- [x] Render all required outputs: title, subtitle, scriptures, explanation, pastoral introduction, objectives, weekly direction, confession, declaration, hashtags, flyer headline, and design concept.
+- [x] Implement prophetic, pastoral, simplify, add-scriptures, shorten, expand, and alternative-generation refinements without overwriting approved content.
+- [x] Support save as template and submit for approval with version/audit metadata.
 
 ## Phase 7 — Sermon studio
 
