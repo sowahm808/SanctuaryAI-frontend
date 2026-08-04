@@ -24,4 +24,6 @@ For mobile builds, install the target package, run `npx cap add ios` or `npx cap
 - `models/` contains strict domain contracts. Signals represent synchronous view state and RxJS/HttpClient is reserved for cancellable server workflows.
 - IndexedDB preserves sermon and flyer drafts. The API remains authoritative after synchronization.
 
-See [architecture and API notes](docs/ARCHITECTURE.md) and [accessibility notes](docs/ACCESSIBILITY.md).
+See [architecture and API notes](docs/ARCHITECTURE.md), the
+[backend authentication integration guide](docs/BACKEND_AUTH_GUIDE.md), and
+[accessibility notes](docs/ACCESSIBILITY.md).
