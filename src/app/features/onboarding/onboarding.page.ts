@@ -1,4 +1,4 @@
-import { Component, computed, signal } from "@angular/core";
+import { Component, computed, inject, signal } from "@angular/core";
 import {
   FormControl,
   FormGroup,
@@ -6,6 +6,8 @@ import {
   Validators,
 } from "@angular/forms";
 import { Router } from "@angular/router";
+import { finalize } from "rxjs";
+import { ChurchProfileService } from "./church-profile.service";
 @Component({
   standalone: true,
   imports: [ReactiveFormsModule],
@@ -125,10 +127,24 @@ import { Router } from "@angular/router";
             (click)="back()"
           >
             Back</button
-          ><button type="button" class="btn" (click)="next()">
-            {{ last() ? "Open SanctuaryAI" : "Save & continue" }}
+          ><button
+            type="button"
+            class="btn"
+            [disabled]="saving()"
+            (click)="next()"
+          >
+            {{
+              saving()
+                ? "Saving..."
+                : last()
+                  ? "Create church profile"
+                  : "Save & continue"
+            }}
           </button>
         </div>
+        @if (error()) {
+          <p class="muted" role="alert">{{ error() }}</p>
+        }
       </form>
     </main>`,
 })
@@ -140,7 +156,10 @@ export class OnboardingPage {
     "Team & social accounts",
     "First monthly campaign",
   ];
+  private readonly profiles = inject(ChurchProfileService);
   readonly step = signal(0);
+  readonly saving = signal(false);
+  readonly error = signal("");
   readonly last = computed(() => this.step() === this.labels.length - 1);
   readonly form = new FormGroup({
     name: new FormControl("", {
@@ -158,7 +177,36 @@ export class OnboardingPage {
     this.step.update((v) => Math.max(v - 1, 0));
   }
   next() {
-    if (this.last()) void this.router.navigateByUrl("/app/dashboard");
-    else this.step.update((v) => v + 1);
+    this.error.set("");
+    if (!this.last()) {
+      this.step.update((v) => v + 1);
+      return;
+    }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.error.set(
+        "Enter the required church name before creating the profile.",
+      );
+      return;
+    }
+    const value = this.form.getRawValue();
+    this.saving.set(true);
+    this.profiles
+      .create({
+        name: value.name,
+        seniorPastor: value.pastor || undefined,
+        slogan: value.slogan || undefined,
+        primaryColor: value.color,
+        bibleTranslation: value.translation,
+        doctrinalGuidelines: value.doctrine || undefined,
+      })
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => void this.router.navigateByUrl("/app/dashboard"),
+        error: () =>
+          this.error.set(
+            "We could not create the church profile. Please try again.",
+          ),
+      });
   }
 }

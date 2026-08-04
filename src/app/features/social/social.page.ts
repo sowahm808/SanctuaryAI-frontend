@@ -63,8 +63,8 @@ import {
         <div class="field">
           <label>Connected accounts</label>
           <div class="platforms">
-            <label><input type="checkbox" checked /> Facebook</label
-            ><label><input type="checkbox" checked /> Instagram</label
+            <label><input type="checkbox" /> Facebook</label
+            ><label><input type="checkbox" /> Instagram</label
             ><label><input type="checkbox" /> TikTok</label>
           </div>
         </div>
@@ -101,15 +101,15 @@ import {
         <h2>Platform previews</h2>
         <div class="grid previews">
           <article class="card preview">
-            <b>f Grace Community Church</b>
+            <b>f Connected account</b>
             <p>{{ form.controls.caption.value }}</p>
-            <div class="media">KINGDOM<br />AUTHORITY</div>
+            <div class="media">Selected media</div>
             <small>Like · Comment · Share</small>
           </article>
           <article class="card preview">
-            <b>◎ gracecommunity</b>
-            <div class="media">KINGDOM<br />AUTHORITY</div>
-            <p>{{ form.controls.caption.value }} #SundayService</p>
+            <b>◎ Connected account</b>
+            <div class="media">Selected media</div>
+            <p>{{ form.controls.caption.value }}</p>
           </article>
           <article class="card preview phone">
             <b>♪ TikTok preview</b>
@@ -123,14 +123,11 @@ import {
 export class SocialPage {
   readonly status = signal("Draft");
   readonly form = new FormGroup({
-    caption: new FormControl(
-      "Join us this Sunday as we discover the authority entrusted to every believer.",
-      {
-        nonNullable: true,
-        validators: [Validators.required, Validators.maxLength(2200)],
-      },
-    ),
-    date: new FormControl("2026-08-02T08:30", {
+    caption: new FormControl("", {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(2200)],
+    }),
+    date: new FormControl("", {
       nonNullable: true,
       validators: [Validators.required],
     }),

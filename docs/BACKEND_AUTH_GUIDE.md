@@ -283,3 +283,98 @@ post-auth redirect URLs from the API until that policy exists.
 8. Run an end-to-end test through the real same-origin proxy. Confirm the
    browser stores the cookie, `/auth/session` survives a hard reload, protected
    API calls are organization-scoped, and logout expires the cookie.
+
+## Church profile creation update
+
+The frontend now treats church profile creation as an authenticated backend
+workflow instead of a local placeholder. A user must have a valid application
+session before opening `/onboarding`; unauthenticated users are redirected to
+`/auth/login?returnTo=/onboarding`. The protected application shell also runs
+the organization setup guard, so users without `organizationSetupComplete: true`
+are sent to onboarding before they can use `/app/*` routes.
+
+### Claims-backed profile display
+
+The logged-in profile name shown in the application shell is sourced from the
+backend session user's verified claims first:
+
+1. `session.user.claims.name`
+2. `session.user.name`
+3. `session.user.email`
+4. `Signed-in user`
+
+Return a `claims` object on every `AuthSession.user` when the identity provider
+or backend token has verified profile claims:
+
+```json
+{
+  "user": {
+    "id": "usr_123",
+    "name": "Ada Mensah",
+    "email": "ada@example.org",
+    "avatarUrl": "https://cdn.example.org/users/usr_123.png",
+    "claims": {
+      "name": "Pastor Ada Mensah",
+      "email": "ada@example.org",
+      "picture": "https://accounts.example.org/avatar.png"
+    },
+    "permissions": ["themes.read"]
+  },
+  "role": "SeniorPastor",
+  "organizationSetupComplete": false,
+  "subscriptionActive": true
+}
+```
+
+Do not accept claims sent directly from the browser. Populate `claims` only from
+verified Firebase/Admin SDK token claims or backend-owned identity records.
+
+### Create church profile endpoint
+
+Implement `POST /api/v1/organizations` as a session-cookie authenticated
+endpoint. It is called by the onboarding page with credentials enabled.
+
+Request body:
+
+```json
+{
+  "name": "Grace Church",
+  "seniorPastor": "Pastor Ada Mensah",
+  "slogan": "Raising disciples",
+  "primaryColor": "#5537a6",
+  "bibleTranslation": "NKJV",
+  "doctrinalGuidelines": "Reviewed ministry guidance"
+}
+```
+
+Success response:
+
+```json
+{
+  "data": {
+    "id": "org_123",
+    "name": "Grace Church",
+    "seniorPastor": "Pastor Ada Mensah",
+    "slogan": "Raising disciples",
+    "primaryColor": "#5537a6"
+  },
+  "correlationId": "01J..."
+}
+```
+
+Backend requirements:
+
+- Return `401` when no valid session cookie exists.
+- Return `409` when the user already owns or belongs to an organization that
+  cannot create another church profile under the product rules.
+- Atomically create the organization, assign the creating user an appropriate
+  membership such as `ChurchAdministrator`, and mark setup complete for the
+  next `GET /auth/session` response.
+- Re-read organization membership when returning the post-create session so the
+  frontend receives `organizationId`, `organizationName`, and
+  `organizationSetupComplete: true` after the next restore/login.
+- Validate `name` as required, trim all strings, validate colors as hex values,
+  and reject unsupported Bible translation values with a stable validation
+  error body.
+- Keep using the same cookie, CSRF, no-store, correlation ID, and audit logging
+  rules described earlier in this guide.

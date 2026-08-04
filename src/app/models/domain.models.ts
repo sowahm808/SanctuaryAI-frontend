@@ -34,12 +34,34 @@ export type Role =
   | "Reviewer"
   | "Publisher"
   | "Viewer";
+export interface UserClaims {
+  name: string;
+  email?: string;
+  picture?: string;
+}
 export interface User {
   id: string;
   name: string;
   email: string;
   avatarUrl?: string;
+  claims?: UserClaims;
   permissions: ReadonlySet<Permission>;
+}
+
+export interface ChurchProfile {
+  id: EntityId;
+  name: string;
+  slogan?: string;
+  seniorPastor?: string;
+  primaryColor?: string;
+}
+export interface CreateChurchProfileRequest {
+  name: string;
+  slogan?: string;
+  seniorPastor?: string;
+  primaryColor?: string;
+  bibleTranslation?: string;
+  doctrinalGuidelines?: string;
 }
 export interface Membership extends OrganizationScoped {
   id: EntityId;
