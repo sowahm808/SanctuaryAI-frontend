@@ -6,7 +6,8 @@ import {
   Validators,
 } from "@angular/forms";
 import { Router } from "@angular/router";
-import { finalize } from "rxjs";
+import { finalize, switchMap } from "rxjs";
+import { SessionService } from "../../services/session.service";
 import { ChurchProfileService } from "./church-profile.service";
 @Component({
   standalone: true,
@@ -157,6 +158,7 @@ export class OnboardingPage {
     "First monthly campaign",
   ];
   private readonly profiles = inject(ChurchProfileService);
+  private readonly session = inject(SessionService);
   readonly step = signal(0);
   readonly saving = signal(false);
   readonly error = signal("");
@@ -200,7 +202,10 @@ export class OnboardingPage {
         bibleTranslation: value.translation,
         doctrinalGuidelines: value.doctrine || undefined,
       })
-      .pipe(finalize(() => this.saving.set(false)))
+      .pipe(
+        switchMap(() => this.session.refresh()),
+        finalize(() => this.saving.set(false)),
+      )
       .subscribe({
         next: () => void this.router.navigateByUrl("/app/dashboard"),
         error: () =>
