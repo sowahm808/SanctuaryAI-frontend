@@ -26,9 +26,9 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ---
 
-## Audit snapshot (2026-08-03)
+## Audit snapshot (2026-08-04)
 
-The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, and a real Fabric.js canvas. Most product workflows remain prototypes backed by local/hardcoded data; authentication now uses typed, cookie-backed API contracts and complete account-access faces, while generic `workspace/:kind` pages stand in for multiple features, API/refresh/draft-sync foundations are incomplete, and test coverage does not yet satisfy the release definition of done.
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, and a real Fabric.js canvas. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API/refresh/draft-sync foundations are incomplete, and test coverage does not yet satisfy the release definition of done.
 
 ## Phase 0 — Baseline audit and project foundation
 
@@ -87,8 +87,8 @@ The checked items below were reconciled against the current source, configuratio
 
 ### Authentication
 
-- [x] Build production forms and flows for login, registration, forgot password, reset password, email verification, MFA, unauthorized access, invitation acceptance, and expired sessions.
-- [x] Implement email/password authentication and backend-mediated Google and Microsoft sign-in.
+- [ ] Build production forms and flows for login, registration, forgot password, reset password, email verification, MFA, unauthorized access, invitation acceptance, and expired sessions.
+- [x] Implement Firebase email/password authentication and Google sign-in, exchanging the Firebase ID token for an authoritative backend session.
 - [ ] Implement secure session restoration, access/refresh-token lifecycle, automatic refresh, explicit logout, and cross-tab session changes.
 - [x] Never persist or display OAuth provider tokens in browser-accessible application state.
 - [x] Provide actionable error messages without leaking account or security details.
