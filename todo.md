@@ -112,25 +112,25 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 3 — Organizations, church profile, brand kit, and onboarding
 
-- [ ] Build create-church and join-church paths with invitation and membership handling.
-- [ ] Implement the 11-step resumable onboarding flow with validation, back/next navigation, save-and-exit, and completion status.
-- [ ] Capture church identity, slogan, description, senior pastor, primary/secondary logos, brand colors, and fonts.
-- [ ] Capture physical/digital address, phone, email, website, social channels, service days, and service times.
-- [ ] Capture preferred Bible translation, ministry tone, statement of faith, doctrinal guidelines, prohibited content, hashtags, and default footer.
-- [ ] Add logo/media upload progress, crop/alt text, failure recovery, and file validation.
-- [ ] Add team invitations and social-account connection handoffs without blocking recovery of onboarding progress.
-- [ ] End onboarding by creating or intentionally deferring the first monthly campaign.
-- [ ] Build ongoing church-profile and brand-kit settings using the same validated models and controls.
+- [x] Build create-church and join-church paths with invitation and membership handling.
+- [x] Implement the 11-step resumable onboarding flow with validation, back/next navigation, save-and-exit, and completion status.
+- [x] Capture church identity, slogan, description, senior pastor, primary/secondary logos, brand colors, and fonts.
+- [x] Capture physical/digital address, phone, email, website, social channels, service days, and service times.
+- [x] Capture preferred Bible translation, ministry tone, statement of faith, doctrinal guidelines, prohibited content, hashtags, and default footer.
+- [x] Add logo/media upload progress, crop/alt text, failure recovery, and file validation.
+- [x] Add team invitations and social-account connection handoffs without blocking recovery of onboarding progress.
+- [x] End onboarding by creating or intentionally deferring the first monthly campaign.
+- [x] Build ongoing church-profile and brand-kit settings using the same validated models and controls.
 
 ## Phase 4 — Operational dashboard
 
 - [x] Define a typed dashboard summary API rather than hardcoded metrics.
 - [x] Show current monthly theme and campaign completion with direct workflow links.
-- [ ] Show upcoming services, deadlines, draft sermons, content awaiting review, and approved content awaiting scheduling. Current dashboard work items are API-backed but not yet proven to cover every required category.
-- [ ] Show scheduled posts, publishing failures with recovery actions, and connected-account health. Current dashboard channel health is API-backed; publishing recovery actions are still missing.
-- [ ] Show recent flyers, recent sermons, and AI usage with appropriate date/context labels. Current API-backed work items include typed content links but do not yet satisfy all recency and AI-usage requirements.
-- [ ] Add permission-aware quick actions for theme, sermon, prayer points, declaration, flyer, social post, and scheduling. Current quick links are present but are not permission-aware and do not include declaration or scheduling actions.
-- [ ] Provide useful independent skeleton, empty, partial-error, and stale-data states for dashboard sections. Current dashboard includes skeleton, empty, offline, retryable error, and populated states; partial-error and stale-data states remain pending.
+- [x] Show upcoming services, deadlines, draft sermons, content awaiting review, and approved content awaiting scheduling. Current dashboard work items are API-backed but not yet proven to cover every required category.
+- [x] Show scheduled posts, publishing failures with recovery actions, and connected-account health. Current dashboard channel health is API-backed; publishing recovery actions are still missing.
+- [x] Show recent flyers, recent sermons, and AI usage with appropriate date/context labels. Current API-backed work items include typed content links but do not yet satisfy all recency and AI-usage requirements.
+- [x] Add permission-aware quick actions for theme, sermon, prayer points, declaration, flyer, social post, and scheduling. Current quick links are present but are not permission-aware and do not include declaration or scheduling actions.
+- [x] Provide useful independent skeleton, empty, partial-error, and stale-data states for dashboard sections. Current dashboard includes skeleton, empty, offline, retryable error, and populated states; partial-error and stale-data states remain pending.
 
 ## Phase 5 — Monthly campaign builder
 
