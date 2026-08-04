@@ -397,10 +397,10 @@ interface NavItem {
     >
       <div class="brand"><span class="brand-mark">✦</span> SanctuaryAI</div>
       <div class="church">
-        <span class="church-logo">G</span
+        <span class="church-logo">{{ session.organizationInitial() }}</span
         ><span
           ><small>MINISTRY WORKSPACE</small
-          ><strong>Grace Community Church</strong></span
+          ><strong>{{ session.organizationName() }}</strong></span
         ><span class="chevron">⌄</span>
       </div>
       <nav class="nav" aria-label="Primary">
@@ -437,9 +437,10 @@ interface NavItem {
             aria-label="User menu"
             (click)="session.logout()"
           >
-            <span class="profile-avatar">{{ initial() }}</span
+            <span class="profile-avatar">{{ session.profileInitial() }}</span
             ><span class="profile-copy"
-              ><strong>Pastor Kwame</strong><small>Administrator</small></span
+              ><strong>{{ session.profileName() }}</strong
+              ><small>{{ session.profileEmail() }}</small></span
             ><span class="profile-copy">⌄</span>
           </button>
         </div>
@@ -457,9 +458,6 @@ interface NavItem {
 export class AppShellComponent {
   readonly session = inject(SessionService);
   readonly menuOpen = signal(false);
-  readonly initial = signal(
-    this.session.user()?.name.charAt(0).toUpperCase() ?? "K",
-  );
   readonly nav: readonly NavItem[] = [
     {
       label: "Dashboard",
@@ -471,7 +469,6 @@ export class AppShellComponent {
       label: "Monthly Campaigns",
       icon: "◫",
       path: "/app/monthly-campaigns",
-      badge: "3",
     },
     {
       label: "Themes",
@@ -512,7 +509,6 @@ export class AppShellComponent {
       icon: "✓",
       path: "/app/reviews",
       section: "Manage",
-      badge: "6",
     },
     { label: "Analytics", icon: "↗", path: "/app/workspace/analytics" },
     {

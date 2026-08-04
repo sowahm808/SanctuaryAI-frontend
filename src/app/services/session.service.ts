@@ -29,6 +29,25 @@ export class SessionService {
   readonly subscriptionActive = computed(
     () => this.current()?.subscriptionActive ?? false,
   );
+  readonly profileName = computed(() => {
+    const user = this.user();
+    return user?.claims?.name || user?.name || user?.email || "Signed-in user";
+  });
+  readonly profileEmail = computed(
+    () => this.user()?.claims?.email || this.user()?.email || "",
+  );
+  readonly profileAvatarUrl = computed(
+    () => this.user()?.claims?.picture || this.user()?.avatarUrl,
+  );
+  readonly profileInitial = computed(
+    () => this.profileName().trim().charAt(0).toUpperCase() || "?",
+  );
+  readonly organizationName = computed(
+    () => this.current()?.organizationName || "Create church profile",
+  );
+  readonly organizationInitial = computed(
+    () => this.organizationName().trim().charAt(0).toUpperCase() || "+",
+  );
 
   restore(): Observable<boolean> {
     if (this.authenticated()) return of(true);

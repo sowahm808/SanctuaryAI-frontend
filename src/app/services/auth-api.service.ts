@@ -10,6 +10,7 @@ export interface AuthSession {
   role: Role;
   organizationId?: string;
   organizationName?: string;
+  organizationLogoUrl?: string;
   organizationSetupComplete: boolean;
   subscriptionActive: boolean;
 }
