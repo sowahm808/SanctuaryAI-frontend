@@ -28,20 +28,20 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ## Audit snapshot (2026-08-04)
 
-The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, and a real Fabric.js canvas. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API/refresh/draft-sync foundations are incomplete, and test coverage does not yet satisfy the release definition of done.
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, canonical route redirects for renamed early features, a real Fabric.js canvas, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, and populated states. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done.
 
 ## Phase 0 — Baseline audit and project foundation
 
 ### Repository audit
 
 - [x] Inventory the current routes, screens, services, models, tests, and documentation against this plan.
-- [ ] Replace feature naming that does not match the target architecture (`campaigns`, `flyer`, and `social`) with the canonical feature names without breaking deep links.
+- [x] Replace feature naming that does not match the target architecture (`campaigns`, `flyer`, and `social`) with the canonical feature names without breaking deep links.
 - [x] Inspect all routes, imports, standalone dependencies, strict compiler settings, build targets, and existing tests.
 - [ ] Record current build/test/accessibility issues before feature development begins.
 
 ### Toolchain and configuration
 
-- [ ] Confirm Angular 20+, Ionic, Capacitor, Angular Material, Tailwind CSS, RxJS, Fabric.js or Konva.js, Chart.js or ECharts, IndexedDB, Vitest or Jasmine/Karma, and Playwright are correctly configured.
+- [ ] Confirm Angular 20+, Ionic, Capacitor, Angular Material, RxJS, Fabric.js, Chart.js, IndexedDB, Vitest, and Playwright are installed; Tailwind CSS remains unconfigured.
 - [x] Configure strict TypeScript and strict Angular template checking.
 - [ ] Configure Tailwind content paths, design tokens, Material theme, Ionic theme variables, global typography, and reduced-motion styles.
 - [ ] Create environment templates for API base URL and safe public configuration; document secret management and environment replacement.
@@ -124,13 +124,13 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 4 — Operational dashboard
 
-- [ ] Define a typed dashboard summary API rather than hardcoded metrics.
-- [ ] Show current monthly theme and campaign completion with direct workflow links.
-- [ ] Show upcoming services, deadlines, draft sermons, content awaiting review, and approved content awaiting scheduling.
-- [ ] Show scheduled posts, publishing failures with recovery actions, and connected-account health.
-- [ ] Show recent flyers, recent sermons, and AI usage with appropriate date/context labels.
-- [ ] Add permission-aware quick actions for theme, sermon, prayer points, declaration, flyer, social post, and scheduling.
-- [ ] Provide useful independent skeleton, empty, partial-error, and stale-data states for dashboard sections.
+- [x] Define a typed dashboard summary API rather than hardcoded metrics.
+- [x] Show current monthly theme and campaign completion with direct workflow links.
+- [ ] Show upcoming services, deadlines, draft sermons, content awaiting review, and approved content awaiting scheduling. Current dashboard work items are API-backed but not yet proven to cover every required category.
+- [ ] Show scheduled posts, publishing failures with recovery actions, and connected-account health. Current dashboard channel health is API-backed; publishing recovery actions are still missing.
+- [ ] Show recent flyers, recent sermons, and AI usage with appropriate date/context labels. Current API-backed work items include typed content links but do not yet satisfy all recency and AI-usage requirements.
+- [ ] Add permission-aware quick actions for theme, sermon, prayer points, declaration, flyer, social post, and scheduling. Current quick links are present but are not permission-aware and do not include declaration or scheduling actions.
+- [ ] Provide useful independent skeleton, empty, partial-error, and stale-data states for dashboard sections. Current dashboard includes skeleton, empty, offline, retryable error, and populated states; partial-error and stale-data states remain pending.
 
 ## Phase 5 — Monthly campaign builder
 
