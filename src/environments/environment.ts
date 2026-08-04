@@ -1,7 +1,9 @@
 export const environment = {
   production: false,
 
-  apiBaseUrl: "http://localhost:3000/api/v1",
+  // Keep browser requests same-origin. The development server and production
+  // host proxy this path to the API, avoiding CORS and cross-site cookie issues.
+  apiBaseUrl: "/api",
 
   firebase: {
     apiKey: "AIzaSyALqzi7ibS4kQPX2q5ukosFhSRdem7U2Vc",

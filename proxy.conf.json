@@ -1,0 +1,10 @@
+{
+  "/api": {
+    "target": "https://sanctuaryai-backend.onrender.com",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api": "/api/v1"
+    }
+  }
+}
