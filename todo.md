@@ -28,7 +28,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ## Audit snapshot (2026-08-04)
 
-The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, a responsive application shell, canonical route redirects for renamed early features, a real Fabric.js canvas, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, and populated states. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done.
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, signal-backed session/platform stores, a responsive application shell, canonical route redirects for renamed early features, server-validation mapping utilities, an IndexedDB draft repository, a real Fabric.js canvas, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, and populated states. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done.
 
 ## Phase 0 — Baseline audit and project foundation
 
@@ -71,17 +71,17 @@ The checked items below were reconciled against the current source, configuratio
 - [x] Model IDs, timestamps, audit metadata, organization scope, users, memberships, roles, granular permissions, and subscription state.
 - [x] Model content lifecycle, approval lifecycle, publishing lifecycle, comments, versions, locks, assignments, and audit events.
 - [x] Model typed API envelopes, validation errors, cursor pagination, filters, sorting, asynchronous jobs, and upload progress.
-- [ ] Use Angular Signals for synchronous local/view state and RxJS for cancellable asynchronous workflows.
-- [ ] Create organization/session/global-notification stores with explicit loading and error states.
+- [x] Use Angular Signals for synchronous local/view state and RxJS for cancellable asynchronous workflows.
+- [x] Create organization/session/global-notification stores with explicit loading and error states.
 
 ### API and persistence foundation
 
 - [ ] Implement environment-based HTTP configuration, bearer-token injection, refresh-token retry with request queuing, correlation IDs, centralized error mapping, and safe retry rules.
 - [ ] Prevent refresh loops and ensure concurrent 401 responses trigger only one refresh operation.
-- [ ] Add server-validation mapping utilities for typed reactive forms.
+- [x] Add server-validation mapping utilities for typed reactive forms.
 - [ ] Implement IndexedDB repositories for drafts, recovery metadata, schema migrations, cleanup, and conflict detection.
 - [ ] Add online/offline awareness and safe draft synchronization behavior.
-- [ ] Create typed API groups: Auth, Organization, Theme, Campaign, Sermon, Prayer, Declaration, Flyer, Video, Media, Approval, Social Account, Social Post, Calendar, Analytics, Notification, User, and Audit.
+- [x] Create typed API groups: Auth, Organization, Theme, Campaign, Sermon, Prayer, Declaration, Flyer, Video, Media, Approval, Social Account, Social Post, Calendar, Analytics, Notification, User, and Audit.
 
 ## Phase 2 — Authentication, authorization, and application shell
 

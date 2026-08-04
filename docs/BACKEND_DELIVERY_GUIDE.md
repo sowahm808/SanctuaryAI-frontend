@@ -272,3 +272,31 @@ Approval must lock the approved theme revision from unauthorized edits. Template
 4. Reviewer comments and approval actions include actor, timestamp, correlation ID, and safe audit metadata.
 5. Saving as a template preserves allowed structured fields and excludes provider secrets, raw tokens, and unsafe prompt internals.
 6. Scripture, tone, audience, date, and event validation return field-addressable `422` errors that frontend forms can map directly.
+
+## Outstanding implementation map after frontend audit (2026-08-04)
+
+The frontend audit found that Phases 7–16 still need authoritative backend implementations before their checklist items can be marked complete. The frontend may expose placeholder or local-prototype screens for some of these areas, but the server remains the source of truth for workflow state, authorization, jobs, drafts, provider health, and audit history.
+
+### Sermon studio
+
+Implement organization-scoped sermon APIs for metadata, structured editor blocks, scriptures, comments, versions, approvals, locks, autosave revisions, conflict detection, and export jobs. Required endpoints include `GET /sermons`, `POST /sermons`, `GET /sermons/:id`, `PATCH /sermons/:id`, `PUT /sermons/:id/draft`, `GET /sermons/:id/versions`, `POST /sermons/:id/comments`, `POST /sermons/:id/submit-review`, `POST /sermons/:id/approve`, and `POST /sermons/:id/exports`. Exports must preserve block structure and scripture metadata and should return observable async jobs.
+
+### Prayer points and declarations
+
+Implement typed prayer and declaration collections rather than generic content records. Prayer APIs must support generation options, category taxonomy, sequence persistence, scripture quotation metadata, congregational responses, drag-and-drop reorder revisions, versions, review, and approval. Declaration APIs must support daily, weekly, monthly, service-opening, communion, offering, family, business, healing, and new-month variants plus handoffs to flyer, video, and social workflows.
+
+### Flyer studio, video studio, and media library
+
+Implement project persistence and asset APIs for flyer canvas JSON, recovery snapshots, missing-asset detection, media references, folders, tags, bulk upload, duplicate detection, destructive-impact checks, and export jobs for PNG, JPG, WebP, PDF, supported SVG, and animated MP4. Video APIs must support scenes, overlays, assets, audio, voice-over, captions, timing, transitions, validation for 15/30/60/90 second durations, queued MP4 rendering, polling/events, cancellation, and retry.
+
+### Social accounts, publisher, and content calendar
+
+Implement secure backend OAuth handoffs for Facebook Pages, Instagram Professional Accounts, and TikTok without returning provider tokens. Social account APIs must expose identity, capability, permission, token-health, last-sync, expiration, reconnect, and disconnect states. Publisher and calendar APIs must support drafts, per-platform variants, asset attachments, preview data, scheduled windows, approval gates, publishing jobs, provider-specific validation, failures, retries, cancellations, and calendar move/resize operations with optimistic concurrency.
+
+### Reviews, approvals, analytics, notifications, team, subscription, settings, and audit logs
+
+Implement approval queues, reviewer assignment, comments, status transitions, immutable audit events, analytics read models, notification preferences and read/unread state, team invitation and role-management APIs, subscription plan/status/usage contracts, organization settings, and searchable/exportable audit logs. All responses must be permission-filtered and every mutation must write safe audit metadata with the request correlation ID.
+
+### Cross-cutting backend gates
+
+Before production launch, each API group must have contract tests for organization isolation, permission denial, validation errors, revision conflicts, idempotency keys, retry-safe async jobs, CSRF protection on cookie-authenticated mutations, correlation IDs in success and error responses, and provider-secret redaction. These gates remain outstanding for every placeholder-backed frontend workflow.
