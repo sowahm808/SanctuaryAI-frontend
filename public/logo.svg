@@ -1,0 +1,21 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">SanctuaryAI logo</title>
+  <desc id="desc">A glowing sanctuary arch with a cross and star in purple and gold.</desc>
+  <rect width="256" height="256" rx="56" fill="url(#bg)"/>
+  <path d="M64 204V112C64 76.654 92.654 48 128 48C163.346 48 192 76.654 192 112V204" stroke="url(#arch)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M92 204V120C92 100.118 108.118 84 128 84C147.882 84 164 100.118 164 120V204" stroke="#F0B966" stroke-width="12" stroke-linecap="round"/>
+  <path d="M128 110V164" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  <path d="M106 132H150" stroke="white" stroke-width="12" stroke-linecap="round"/>
+  <path d="M190 55L197 72L214 79L197 86L190 103L183 86L166 79L183 72L190 55Z" fill="#F8D99A"/>
+  <defs>
+    <linearGradient id="bg" x1="36" y1="28" x2="221" y2="231" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8E70DC"/>
+      <stop offset="0.54" stop-color="#5D3EB0"/>
+      <stop offset="1" stop-color="#21163E"/>
+    </linearGradient>
+    <linearGradient id="arch" x1="64" y1="48" x2="192" y2="204" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#B9ACE0"/>
+    </linearGradient>
+  </defs>
+</svg>
