@@ -61,6 +61,60 @@ describe("normalizeDashboardSummary", () => {
     expect(summary.currentCampaign?.reviewCount).toBe(0);
   });
 
+  it("accepts production dashboard aliases and numeric strings", () => {
+    const summary = normalizeDashboardSummary({
+      generated_at: base.generatedAt,
+      stale: false,
+      metrics: [
+        {
+          kind: "review",
+          label: "Awaiting review",
+          value: "7",
+          context: "3 due today",
+          severity: "warning",
+        },
+      ],
+      active_campaign: {
+        id: "cmp_2",
+        title: "Kingdom Authority",
+        month_label: "August 2026",
+        scripture_reference: "Luke 10:19",
+        approved_assets: "8",
+        total_assets: "12",
+        next_service_at: "2026-08-09T09:00:00Z",
+        review_count: "3",
+      },
+      work_items: [
+        {
+          id: "ser_2",
+          title: "Authority of the Believer",
+          type: "sermon",
+          category: "draft-sermon",
+          status: "Draft",
+          detail: "Autosaved remotely",
+          href: "/app/sermons/ser_2",
+          updated_at: base.generatedAt,
+        },
+      ],
+      scheduled_posts: [],
+      publishing_failures: [],
+      channels: [],
+      recent_content: [],
+      quick_actions: [],
+      section_issues: [],
+    });
+
+    expect(summary.metrics[0]?.value).toBe(7);
+    expect(summary.currentCampaign).toMatchObject({
+      id: "cmp_2",
+      monthLabel: "August 2026",
+      approvedAssets: 8,
+      totalAssets: 12,
+      reviewCount: 3,
+    });
+    expect(summary.workItems[0]?.updatedAt).toBe(base.generatedAt);
+  });
+
   it("drops external dashboard links returned by mistake", () => {
     const summary = normalizeDashboardSummary({
       ...base,
