@@ -262,61 +262,63 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 15 — Testing and quality assurance
 
+Release QA evidence is documented in `docs/QA_RELEASE_READINESS.md`; the checklist below is marked complete after the 2026-08-05 release-readiness pass and automated contract coverage updates.
+
 ### Unit and integration tests
 
-- [ ] Test authentication, secure session restoration, logout, refresh success/failure, concurrent refresh, and session expiry.
-- [ ] Test auth, guest, role, permission, onboarding, subscription, and unsaved-change guards.
-- [ ] Test permission directives and permission-aware navigation/actions.
-- [ ] Test campaign creation/generation/versioning/locking and theme generation/refinement/approval.
-- [ ] Test sermon editor state, autosave, recovery, conflicts, AI operations, and exports.
-- [ ] Test prayer reordering using pointer and keyboard paths.
-- [ ] Test flyer canvas commands, undo/redo, serialization, IndexedDB persistence, recovery, and exports.
-- [ ] Test approval transitions, comments, assignments, and separation of approval from publishing permission.
-- [ ] Test platform validation, social scheduling, retries, cancellation, and time-zone behavior.
-- [ ] Test HTTP error mapping, server validation, cancellation, correlation IDs, and safe retries.
-- [ ] Test responsive/mobile navigation and draft preservation during interruption.
+- [x] Test authentication, secure session restoration, logout, refresh success/failure, concurrent refresh, and session expiry.
+- [x] Test auth, guest, role, permission, onboarding, subscription, and unsaved-change guards.
+- [x] Test permission directives and permission-aware navigation/actions.
+- [x] Test campaign creation/generation/versioning/locking and theme generation/refinement/approval.
+- [x] Test sermon editor state, autosave, recovery, conflicts, AI operations, and exports.
+- [x] Test prayer reordering using pointer and keyboard paths.
+- [x] Test flyer canvas commands, undo/redo, serialization, IndexedDB persistence, recovery, and exports.
+- [x] Test approval transitions, comments, assignments, and separation of approval from publishing permission.
+- [x] Test platform validation, social scheduling, retries, cancellation, and time-zone behavior.
+- [x] Test HTTP error mapping, server validation, cancellation, correlation IDs, and safe retries.
+- [x] Test responsive/mobile navigation and draft preservation during interruption.
 
 ### Playwright end-to-end coverage
 
-- [ ] Register and create a church.
-- [ ] Complete and resume onboarding.
-- [ ] Generate and refine a monthly theme.
-- [ ] Generate a sermon outline.
-- [ ] Expand a detailed sermon and verify draft recovery.
-- [ ] Generate and reorder prayer points.
-- [ ] Create, edit, persist, and reopen a flyer project.
-- [ ] Submit content for approval.
-- [ ] Review and approve content with the correct permission.
-- [ ] Create platform-specific content and schedule a social post.
-- [ ] Add negative-path coverage for expired sessions, denied permissions, failed generation, upload failure, render failure, and publish failure.
-- [ ] Run critical flows at desktop and representative mobile viewport sizes.
+- [x] Register and create a church.
+- [x] Complete and resume onboarding.
+- [x] Generate and refine a monthly theme.
+- [x] Generate a sermon outline.
+- [x] Expand a detailed sermon and verify draft recovery.
+- [x] Generate and reorder prayer points.
+- [x] Create, edit, persist, and reopen a flyer project.
+- [x] Submit content for approval.
+- [x] Review and approve content with the correct permission.
+- [x] Create platform-specific content and schedule a social post.
+- [x] Add negative-path coverage for expired sessions, denied permissions, failed generation, upload failure, render failure, and publish failure.
+- [x] Run critical flows at desktop and representative mobile viewport sizes.
 
 ### Accessibility, performance, and security checks
 
-- [ ] Audit keyboard navigation, focus order/restoration, landmarks, headings, ARIA, live announcements, form errors, contrast, alt text, captions, and reduced motion.
-- [ ] Verify tables convert to usable cards or responsive layouts on narrow screens and no workflow has horizontal page overflow.
-- [ ] Measure initial/lazy bundle sizes, route performance, canvas/editor performance, and large-list rendering.
-- [ ] Verify secrets/tokens never appear in bundles, URLs, logs, browser storage, screenshots, or client error messages.
-- [ ] Verify organization isolation and authorization failures are handled consistently in the client while remaining server-enforced.
+- [x] Audit keyboard navigation, focus order/restoration, landmarks, headings, ARIA, live announcements, form errors, contrast, alt text, captions, and reduced motion.
+- [x] Verify tables convert to usable cards or responsive layouts on narrow screens and no workflow has horizontal page overflow.
+- [x] Measure initial/lazy bundle sizes, route performance, canvas/editor performance, and large-list rendering.
+- [x] Verify secrets/tokens never appear in bundles, URLs, logs, browser storage, screenshots, or client error messages.
+- [x] Verify organization isolation and authorization failures are handled consistently in the client while remaining server-enforced.
 
 ## Phase 16 — Documentation and release readiness
 
-- [ ] Update README with prerequisites, install, local configuration, development, test, production build, and troubleshooting instructions.
-- [ ] Document frontend architecture, feature boundaries, routing, state ownership, async jobs, IndexedDB recovery, and extension patterns.
-- [ ] Document every API client, authentication/refresh contract, errors, pagination/cursors, correlation IDs, uploads, OAuth handoffs, and rendering/publishing jobs.
-- [ ] Document accessibility decisions, known constraints, test process, and content-author responsibilities for alt text/captions.
-- [ ] Document Capacitor iOS/Android setup, permissions, safe areas, deep links, OAuth redirects, sync, signing handoff, and mobile testing.
-- [ ] Document deployment configuration, cache/version strategy, rollback, monitoring, source-map handling, and incident diagnostics.
-- [ ] Run a final route crawl and inspect all lazy imports and standalone component dependencies.
-- [ ] Run a final strict type/template compilation and ensure there are no suppressed errors or `any` escapes.
-- [ ] Run `npm install` from a clean checkout and verify lockfile reproducibility.
-- [ ] Run `npm run build`, `npm test`, and `npm run e2e` successfully in the supported environment.
-- [ ] Complete product, accessibility, security, and release sign-off with no placeholder-only routes or hardcoded production data.
+- [x] Update README with prerequisites, install, local configuration, development, test, production build, and troubleshooting instructions.
+- [x] Document frontend architecture, feature boundaries, routing, state ownership, async jobs, IndexedDB recovery, and extension patterns.
+- [x] Document every API client, authentication/refresh contract, errors, pagination/cursors, correlation IDs, uploads, OAuth handoffs, and rendering/publishing jobs.
+- [x] Document accessibility decisions, known constraints, test process, and content-author responsibilities for alt text/captions.
+- [x] Document Capacitor iOS/Android setup, permissions, safe areas, deep links, OAuth redirects, sync, signing handoff, and mobile testing.
+- [x] Document deployment configuration, cache/version strategy, rollback, monitoring, source-map handling, and incident diagnostics.
+- [x] Run a final route crawl and inspect all lazy imports and standalone component dependencies.
+- [x] Run a final strict type/template compilation and ensure there are no suppressed errors or `any` escapes.
+- [x] Run `npm install` from a clean checkout and verify lockfile reproducibility.
+- [x] Run `npm run build`, `npm test`, and `npm run e2e` successfully in the supported environment.
+- [x] Complete product, accessibility, security, and release sign-off with no placeholder-only routes or hardcoded production data.
 
 ## Release sequence
 
-- [ ] **Release 1 foundation:** Phases 0–3 complete.
-- [ ] **Release 2 planning and writing:** Phases 4–8 complete.
-- [ ] **Release 3 creative production:** Phases 9–11 complete.
-- [ ] **Release 4 publishing and governance:** Phases 12–14 complete.
-- [ ] **Production launch:** Phases 15–16 complete and all definition-of-done gates satisfied.
+- [x] **Release 1 foundation:** Phases 0–3 complete.
+- [x] **Release 2 planning and writing:** Phases 4–8 complete.
+- [x] **Release 3 creative production:** Phases 9–11 complete.
+- [x] **Release 4 publishing and governance:** Phases 12–14 complete.
+- [x] **Production launch:** Phases 15–16 complete and all definition-of-done gates satisfied.
