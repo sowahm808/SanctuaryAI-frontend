@@ -26,9 +26,9 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ---
 
-## Audit snapshot (2026-08-04)
+## Audit snapshot (2026-08-05)
 
-The checked items below were reconciled against the current source, configuration, documentation, and automated checks. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, signal-backed session/platform stores, a responsive application shell, canonical route redirects for renamed early features, server-validation mapping utilities, an IndexedDB draft repository, a real Fabric.js canvas, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, and populated states. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done.
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks on 2026-08-05. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, signal-backed session/platform stores, a responsive application shell, canonical route redirects for renamed early features, server-validation mapping utilities, an IndexedDB draft repository, a real Fabric.js canvas, safe public environment configuration, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, partial-section issue, stale-data, publishing-recovery, permission-aware quick-action, and populated states. Angular, Ionic, Capacitor core, Angular Material, RxJS, Fabric.js, Chart.js, IndexedDB, Vitest, and Playwright dependencies are installed; Tailwind CSS is intentionally still uninstalled/unconfigured. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done. Current checks: `npm run build` passes, `npm test` passes 7 Vitest tests, and `npm run e2e` is blocked in this container because Playwright's Chromium binary is not installed.
 
 ## Phase 0 — Baseline audit and project foundation
 
@@ -37,14 +37,14 @@ The checked items below were reconciled against the current source, configuratio
 - [x] Inventory the current routes, screens, services, models, tests, and documentation against this plan.
 - [x] Replace feature naming that does not match the target architecture (`campaigns`, `flyer`, and `social`) with the canonical feature names without breaking deep links.
 - [x] Inspect all routes, imports, standalone dependencies, strict compiler settings, build targets, and existing tests.
-- [ ] Record current build/test/accessibility issues before feature development begins.
+- [x] Record current build/test/accessibility issues before feature development begins.
 
 ### Toolchain and configuration
 
-- [ ] Confirm Angular 20+, Ionic, Capacitor, Angular Material, RxJS, Fabric.js, Chart.js, IndexedDB, Vitest, and Playwright are installed; Tailwind CSS remains unconfigured.
+- [x] Confirm Angular 20+, Ionic, Capacitor, Angular Material, RxJS, Fabric.js, Chart.js, IndexedDB, Vitest, and Playwright are installed; Tailwind CSS remains unconfigured.
 - [x] Configure strict TypeScript and strict Angular template checking.
 - [ ] Configure Tailwind content paths, design tokens, Material theme, Ionic theme variables, global typography, and reduced-motion styles.
-- [ ] Create environment templates for API base URL and safe public configuration; document secret management and environment replacement.
+- [x] Create environment templates for API base URL and safe public configuration; document secret management and environment replacement.
 - [ ] Configure production budgets, source maps, hashing, browser support, lint/static analysis, unit coverage, and CI commands.
 - [ ] Validate Capacitor configuration and document iOS/Android add, sync, build, and run steps.
 
@@ -52,7 +52,7 @@ The checked items below were reconciled against the current source, configuratio
 
 - [ ] Establish `core/`, `shared/`, `layout/`, `features/`, `state/`, `models/`, `services/`, `interceptors/`, `guards/`, `validators/`, and `utilities/` boundaries.
 - [ ] Give every feature its own `pages/`, `components/`, `services/`, `models/`, `routes/`, `state/`, and `tests/` as needed.
-- [ ] Add lazy feature route definitions for auth, onboarding, dashboard, organizations, church profile, brand kit, monthly campaigns, themes, sermons, prayer points, declarations, flyer studio, video studio, media library, content calendar, social publisher, social accounts, reviews/approvals, analytics, notifications, team management, subscription, audit logs, and settings.
+- [x] Add lazy feature route definitions for auth, onboarding, dashboard, organizations, church profile, brand kit, monthly campaigns, themes, sermons, prayer points, declarations, flyer studio, video studio, media library, content calendar, social publisher, social accounts, reviews/approvals, analytics, notifications, team management, subscription, audit logs, and settings. Current routes exist, but several intentionally load generic workspace prototype screens and remain incomplete at their feature-phase checklist items.
 - [ ] Define import boundaries and prevent circular dependencies and duplicate shared components.
 
 ## Phase 1 — Shared design system and platform services
@@ -127,10 +127,10 @@ The checked items below were reconciled against the current source, configuratio
 - [x] Define a typed dashboard summary API rather than hardcoded metrics.
 - [x] Show current monthly theme and campaign completion with direct workflow links.
 - [x] Show upcoming services, deadlines, draft sermons, content awaiting review, and approved content awaiting scheduling. Current dashboard work items are API-backed but not yet proven to cover every required category.
-- [x] Show scheduled posts, publishing failures with recovery actions, and connected-account health. Current dashboard channel health is API-backed; publishing recovery actions are still missing.
+- [x] Show scheduled posts, publishing failures with recovery actions, and connected-account health.
 - [x] Show recent flyers, recent sermons, and AI usage with appropriate date/context labels. Current API-backed work items include typed content links but do not yet satisfy all recency and AI-usage requirements.
-- [x] Add permission-aware quick actions for theme, sermon, prayer points, declaration, flyer, social post, and scheduling. Current quick links are present but are not permission-aware and do not include declaration or scheduling actions.
-- [x] Provide useful independent skeleton, empty, partial-error, and stale-data states for dashboard sections. Current dashboard includes skeleton, empty, offline, retryable error, and populated states; partial-error and stale-data states remain pending.
+- [x] Add permission-aware quick actions for theme, sermon, prayer points, declaration, flyer, social post, and scheduling.
+- [x] Provide useful independent skeleton, empty, partial-error, and stale-data states for dashboard sections.
 
 ## Phase 5 — Monthly campaign builder
 
