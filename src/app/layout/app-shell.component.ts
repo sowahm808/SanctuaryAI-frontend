@@ -473,7 +473,7 @@ export class AppShellComponent {
     {
       label: "Themes",
       icon: "✦",
-      path: "/app/workspace/themes",
+      path: "/app/themes",
       section: "Create",
     },
     {
@@ -482,19 +482,19 @@ export class AppShellComponent {
       path: "/app/sermons",
       permission: "sermons.create",
     },
-    { label: "Prayer Points", icon: "♢", path: "/app/workspace/prayer-points" },
-    { label: "Declarations", icon: "◈", path: "/app/workspace/declarations" },
+    { label: "Prayer Points", icon: "♢", path: "/app/prayer-points" },
+    { label: "Declarations", icon: "◈", path: "/app/declarations" },
     {
       label: "Flyer Studio",
       icon: "▧",
       path: "/app/flyer-studio",
       permission: "flyers.edit",
     },
-    { label: "Video Studio", icon: "▶", path: "/app/workspace/videos" },
+    { label: "Video Studio", icon: "▶", path: "/app/video-studio" },
     {
       label: "Content Calendar",
       icon: "▦",
-      path: "/app/workspace/calendar",
+      path: "/app/content-calendar",
       section: "Publish",
     },
     {
@@ -503,24 +503,24 @@ export class AppShellComponent {
       path: "/app/social-publisher",
       permission: "social.schedule",
     },
-    { label: "Media Library", icon: "▣", path: "/app/workspace/media" },
+    { label: "Media Library", icon: "▣", path: "/app/media-library" },
     {
       label: "Reviews",
       icon: "✓",
       path: "/app/reviews",
       section: "Manage",
     },
-    { label: "Analytics", icon: "↗", path: "/app/workspace/analytics" },
+    { label: "Analytics", icon: "↗", path: "/app/analytics" },
     {
       label: "Team",
       icon: "♙",
-      path: "/app/workspace/team",
+      path: "/app/team-management",
       permission: "users.manage",
     },
     {
       label: "Church Settings",
       icon: "⚙",
-      path: "/app/workspace/settings",
+      path: "/app/settings",
       permission: "settings.manage",
     },
   ];
