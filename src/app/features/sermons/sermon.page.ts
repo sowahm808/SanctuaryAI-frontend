@@ -1,4 +1,11 @@
-import { Component, OnDestroy, OnInit, computed, signal } from "@angular/core";
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from "@angular/core";
 import {
   FormControl,
   FormGroup,
@@ -6,6 +13,13 @@ import {
   Validators,
 } from "@angular/forms";
 import { openDB } from "idb";
+import type { EntityId } from "../../models/domain.models";
+import { PlatformStateService } from "../../services/platform-state.service";
+import {
+  SermonService,
+  type SermonDraftRequest,
+  type SermonRecord,
+} from "./sermon.service";
 
 type SermonStatus = "Draft" | "Awaiting Approval" | "Approved" | "Published";
 type SermonDuration = 15 | 30 | 45 | 60 | 90;
@@ -14,6 +28,8 @@ type SaveState =
   | "Unsaved changes"
   | "Saving locally…"
   | "Saved locally"
+  | "Saving to server…"
+  | "Synced to server"
   | "Server conflict detected";
 type SectionKey =
   | "introduction"
@@ -263,7 +279,14 @@ const INITIAL_SECTIONS: readonly SermonSection[] = [
           (click)="simulateConflict()"
         >
           Check conflicts</button
-        ><button class="btn" type="button">Submit for review</button>
+        ><button
+          class="btn"
+          type="button"
+          [disabled]="isBusy()"
+          (click)="submitForReview()"
+        >
+          Submit for review
+        </button>
       </div>
     </header>
     <form
@@ -411,7 +434,14 @@ const INITIAL_SECTIONS: readonly SermonSection[] = [
           <h2>Export</h2>
           <div class="export-grid">
             @for (format of exportFormats; track format) {
-              <button class="btn secondary" type="button">{{ format }}</button>
+              <button
+                class="btn secondary"
+                type="button"
+                [disabled]="isBusy()"
+                (click)="exportSermon(format)"
+              >
+                {{ format }}
+              </button>
             }
           </div>
           <p class="muted">
@@ -422,6 +452,8 @@ const INITIAL_SECTIONS: readonly SermonSection[] = [
     </div>`,
 })
 export class SermonPage implements OnInit, OnDestroy {
+  private readonly sermons = inject(SermonService);
+  private readonly platform = inject(PlatformStateService);
   readonly durationTargets: readonly SermonDuration[] = [15, 30, 45, 60, 90];
   readonly metadata = new FormGroup({
     title: new FormControl("The Authority of the Believer", {
@@ -471,6 +503,7 @@ export class SermonPage implements OnInit, OnDestroy {
     INITIAL_SECTIONS.map((section) => ({ ...section })),
   );
   readonly saveState = signal<SaveState>("Recovered draft");
+  readonly isBusy = signal(false);
   readonly activeJob = signal<AiJob | undefined>(undefined);
   readonly panels: readonly ReviewPanel[] = [
     {
@@ -502,6 +535,8 @@ export class SermonPage implements OnInit, OnDestroy {
   readonly exportFormats = ["DOCX", "PDF", "HTML", "Markdown"];
   private timer?: ReturnType<typeof setTimeout>;
   private history = new Map<SectionKey, string[]>();
+  private sermonId?: EntityId;
+  private revision?: number;
   readonly totalMinutes = computed(() =>
     this.sections().reduce((sum, section) => sum + section.minutes, 0),
   );
@@ -559,17 +594,101 @@ export class SermonPage implements OnInit, OnDestroy {
         : "Document-level refinement preview is ready for review.",
       diff: "+ Adds pastoral clarity and scripture metadata before applying.",
     });
-    setTimeout(
-      () =>
-        this.activeJob.update((job) => (job ? { ...job, progress: 100 } : job)),
-      700,
-    );
+    this.ensureServerDraft(() => {
+      if (!this.sermonId) return;
+      this.sermons
+        .runAi(this.sermonId, { label, scope, sectionKey: key })
+        .subscribe({
+          next: (job) =>
+            this.activeJob.set({
+              label: job.label ?? label,
+              scope,
+              progress: job.progress,
+              preview: job.preview ?? "AI refinement queued on the server.",
+              diff: job.diff ?? "+ Server job will return candidate changes.",
+            }),
+          error: () => this.finishLocalAiPreview(),
+        });
+    });
   }
   recoverDraft(): void {
-    this.saveState.set("Recovered draft");
+    void this.restoreLocalDraft();
   }
   simulateConflict(): void {
-    this.saveState.set("Server conflict detected");
+    if (!this.sermonId) {
+      this.platform.notify({
+        tone: "info",
+        title: "No server draft yet",
+        message: "Save the sermon before checking server conflicts.",
+      });
+      return;
+    }
+    this.isBusy.set(true);
+    this.sermons.checkConflicts(this.sermonId, this.revision).subscribe({
+      next: (record) => {
+        this.applyServerRecord(record);
+        this.saveState.set("Synced to server");
+        this.platform.notify({
+          tone: "success",
+          title: "No conflicts found",
+          message: "The sermon matches the latest server revision.",
+        });
+      },
+      error: () => {
+        this.saveState.set("Server conflict detected");
+        this.platform.notify({
+          tone: "warning",
+          title: "Conflict check failed",
+          message: "The server could not verify the current sermon revision.",
+        });
+      },
+      complete: () => this.isBusy.set(false),
+    });
+  }
+  submitForReview(): void {
+    this.ensureServerDraft(() => {
+      if (!this.sermonId) return;
+      this.isBusy.set(true);
+      this.sermons.submitForReview(this.sermonId).subscribe({
+        next: (record) => {
+          this.applyServerRecord(record);
+          this.metadata.controls.status.setValue("Awaiting Approval");
+          this.platform.notify({
+            tone: "success",
+            title: "Submitted for review",
+            message: "The sermon is now awaiting approval.",
+          });
+        },
+        error: () =>
+          this.platform.notify({
+            tone: "error",
+            title: "Submit failed",
+            message: "The sermon could not be submitted for review.",
+          }),
+        complete: () => this.isBusy.set(false),
+      });
+    });
+  }
+  exportSermon(format: string): void {
+    this.ensureServerDraft(() => {
+      if (!this.sermonId) return;
+      this.isBusy.set(true);
+      this.sermons.requestExport(this.sermonId, format).subscribe({
+        next: (job) =>
+          this.platform.notify({
+            tone: "success",
+            title: `${format} export queued`,
+            message: `Export job ${job.id} is ${job.status} (${job.progress}%).`,
+          }),
+        error: () =>
+          this.platform.notify({
+            tone: "error",
+            title: "Export failed",
+            message: `${format} export could not be queued.`,
+          }),
+        complete: () => this.isBusy.set(false),
+      });
+    });
   }
   private queueSave(): void {
     this.saveState.set("Unsaved changes");
@@ -577,23 +696,92 @@ export class SermonPage implements OnInit, OnDestroy {
     this.timer = setTimeout(() => void this.persist(), 450);
   }
   private async persist(): Promise<void> {
+    this.saveState.set("Saving to server…");
+    const body = this.draftRequest();
+    const request = this.sermonId
+      ? this.sermons.saveDraft(this.sermonId, body)
+      : this.sermons.createDraft(body);
+    request.subscribe({
+      next: (record) => {
+        this.applyServerRecord(record);
+        this.saveState.set("Synced to server");
+      },
+      error: () => void this.persistLocally(),
+    });
+  }
+  private async persistLocally(): Promise<void> {
     this.saveState.set("Saving locally…");
-    const db = await openDB("sanctuary-drafts", 1, {
+    const db = await this.draftDb();
+    await db.put(
+      "sermons",
+      { ...this.draftRequest(), savedAt: new Date().toISOString() },
+      "current",
+    );
+    this.saveState.set("Saved locally");
+  }
+  private async restoreLocalDraft(): Promise<void> {
+    const db = await this.draftDb();
+    const draft = (await db.get("sermons", "current")) as
+      (SermonDraftRequest & { savedAt: string }) | undefined;
+    if (draft) {
+      this.metadata.patchValue(draft.metadata);
+      this.sections.set(
+        draft.sections.map((section) => ({
+          ...section,
+          key: section.key as SectionKey,
+        })),
+      );
+    }
+    this.saveState.set("Recovered draft");
+  }
+  private draftDb() {
+    return openDB("sanctuary-drafts", 1, {
       upgrade(database) {
         if (!database.objectStoreNames.contains("sermons"))
           database.createObjectStore("sermons");
       },
     });
-    await db.put(
-      "sermons",
-      {
-        metadata: this.metadata.getRawValue(),
-        sections: this.sections(),
-        savedAt: new Date().toISOString(),
+  }
+  private ensureServerDraft(afterSave: () => void): void {
+    if (this.sermonId) {
+      afterSave();
+      return;
+    }
+    this.isBusy.set(true);
+    this.sermons.createDraft(this.draftRequest()).subscribe({
+      next: (record) => {
+        this.applyServerRecord(record);
+        afterSave();
       },
-      "current",
+      error: () => {
+        this.platform.notify({
+          tone: "error",
+          title: "Save required",
+          message: "The sermon must be saved to the server before this action.",
+        });
+      },
+      complete: () => this.isBusy.set(false),
+    });
+  }
+  private draftRequest(): SermonDraftRequest {
+    return {
+      metadata: this.metadata.getRawValue(),
+      sections: this.sections(),
+      revision: this.revision,
+    };
+  }
+  private applyServerRecord(
+    record: Pick<SermonRecord, "id" | "revision">,
+  ): void {
+    this.sermonId = record.id;
+    this.revision = record.revision;
+  }
+  private finishLocalAiPreview(): void {
+    setTimeout(
+      () =>
+        this.activeJob.update((job) => (job ? { ...job, progress: 100 } : job)),
+      700,
     );
-    this.saveState.set("Saved locally");
   }
   private readonly handleShortcut = (event: KeyboardEvent): void => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
