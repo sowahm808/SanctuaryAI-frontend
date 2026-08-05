@@ -50,6 +50,14 @@ export class ApiClientService {
       { withCredentials: true },
     );
   }
+  getResource<T>(
+    group: ApiGroup,
+    resource: string,
+  ): Observable<ApiResponse<T>> {
+    return this.http.get<ApiResponse<T>>(`${this.url(group)}/${resource}`, {
+      withCredentials: true,
+    });
+  }
   getSingleton<T>(
     group: ApiGroup,
     resource: string,
@@ -74,6 +82,28 @@ export class ApiClientService {
   ): Observable<ApiResponse<TResult>> {
     return this.http.patch<ApiResponse<TResult>>(
       `${this.url(group)}/${encodeURIComponent(id)}`,
+      body,
+      { withCredentials: true },
+    );
+  }
+  putResource<TBody extends object, TResult>(
+    group: ApiGroup,
+    resource: string,
+    body: TBody,
+  ): Observable<ApiResponse<TResult>> {
+    return this.http.put<ApiResponse<TResult>>(
+      `${this.url(group)}/${resource}`,
+      body,
+      { withCredentials: true },
+    );
+  }
+  postResource<TBody extends object, TResult>(
+    group: ApiGroup,
+    resource: string,
+    body: TBody,
+  ): Observable<ApiResponse<TResult>> {
+    return this.http.post<ApiResponse<TResult>>(
+      `${this.url(group)}/${resource}`,
       body,
       { withCredentials: true },
     );
