@@ -212,53 +212,53 @@ The checked items below were reconciled against the current source, configuratio
 
 ### Social account connections
 
-- [ ] Build Facebook Page, Instagram Professional Account, and TikTok connection workflows through secure backend OAuth handoffs.
-- [ ] Show account identity, token health (never token values), permissions, last sync, capabilities, expiration warnings, and connection state.
-- [ ] Implement reconnect/disconnect with confirmations, permission checks, and useful provider errors.
+- [x] Build Facebook Page, Instagram Professional Account, and TikTok connection workflows through secure backend OAuth handoffs.
+- [x] Show account identity, token health (never token values), permissions, last sync, capabilities, expiration warnings, and connection state.
+- [x] Implement reconnect/disconnect with confirmations, permission checks, and useful provider errors.
 
 ### Social publisher
 
-- [ ] Build account/content/media selection, per-platform caption generation/editing, scheduling, and approval fields.
-- [ ] Build distinct Facebook page/link, Instagram feed/portrait/story/reel, and TikTok video/cover/privacy/mode previews.
-- [ ] Validate platform-specific media, caption, hashtag, scheduling, privacy, and publishing requirements.
-- [ ] Support Draft, Awaiting Approval, Approved, Scheduled, Publishing, Published, Failed, Cancelled, and Manually Published states.
-- [ ] Implement schedule, publish now, retry failed, cancel, and mark-manually-published actions with authorization and audit history.
-- [ ] Keep content approval separate from social publishing authorization in models, controls, and status displays.
+- [x] Build account/content/media selection, per-platform caption generation/editing, scheduling, and approval fields.
+- [x] Build distinct Facebook page/link, Instagram feed/portrait/story/reel, and TikTok video/cover/privacy/mode previews.
+- [x] Validate platform-specific media, caption, hashtag, scheduling, privacy, and publishing requirements.
+- [x] Support Draft, Awaiting Approval, Approved, Scheduled, Publishing, Published, Failed, Cancelled, and Manually Published states.
+- [x] Implement schedule, publish now, retry failed, cancel, and mark-manually-published actions with authorization and audit history.
+- [x] Keep content approval separate from social publishing authorization in models, controls, and status displays.
 
 ### Content calendar
 
-- [ ] Build month, week, day, and agenda views with accessible view switching.
-- [ ] Add filters for platform, status, campaign, ministry, owner, approval, and publishing state.
-- [ ] Display platform/status indicators and campaign grouping without relying on color alone.
-- [ ] Implement keyboard-accessible drag/reschedule with confirmation, optimistic rollback where safe, and time-zone/DST handling.
-- [ ] Open items directly for editing/rescheduling while preserving calendar filters and focus.
+- [x] Build month, week, day, and agenda views with accessible view switching.
+- [x] Add filters for platform, status, campaign, ministry, owner, approval, and publishing state.
+- [x] Display platform/status indicators and campaign grouping without relying on color alone.
+- [x] Implement keyboard-accessible drag/reschedule with confirmation, optimistic rollback where safe, and time-zone/DST handling.
+- [x] Open items directly for editing/rescheduling while preserving calendar filters and focus.
 
 ## Phase 13 — Reviews, approvals, and audit logs
 
-- [ ] Build a permission-aware queue for themes, sermons, prayers, declarations, flyers, videos, and social posts.
-- [ ] Add typed filters, assignments, priorities, due dates, and queue loading/empty/error states.
-- [ ] Build content-type previews and accessible side-by-side or inline version comparisons.
-- [ ] Support comments, inline comments, mentions, assignment, approve, reject, and request-changes actions.
-- [ ] Require reasons where policy demands and prevent self-approval where organization rules prohibit it.
-- [ ] Clearly distinguish content approval from authorization to publish on social platforms.
-- [ ] Build immutable audit-history views with actor, organization, timestamp, correlation ID, action, and safe change summary.
+- [x] Build a permission-aware queue for themes, sermons, prayers, declarations, flyers, videos, and social posts.
+- [x] Add typed filters, assignments, priorities, due dates, and queue loading/empty/error states.
+- [x] Build content-type previews and accessible side-by-side or inline version comparisons.
+- [x] Support comments, inline comments, mentions, assignment, approve, reject, and request-changes actions.
+- [x] Require reasons where policy demands and prevent self-approval where organization rules prohibit it.
+- [x] Clearly distinguish content approval from authorization to publish on social platforms.
+- [x] Build immutable audit-history views with actor, organization, timestamp, correlation ID, action, and safe change summary.
 
 ## Phase 14 — Analytics, notifications, team, subscription, and settings
 
 ### Analytics
 
-- [ ] Implement typed analytics queries for generated/approved content, publishing outcomes, engagement, reach, views, reactions, shares, saves, clicks, followers, AI usage, and top content.
-- [ ] Build date, platform, and campaign filters shared across relevant charts.
-- [ ] Give every chart independent loading, skeleton, empty, error, and retry states; never hardcode analytics.
-- [ ] Add accessible tabular alternatives and text summaries for Chart.js/ECharts visualizations.
-- [ ] Document metric definitions, provider delays, time zones, and partial-data caveats.
+- [x] Implement typed analytics queries for generated/approved content, publishing outcomes, engagement, reach, views, reactions, shares, saves, clicks, followers, AI usage, and top content.
+- [x] Build date, platform, and campaign filters shared across relevant charts.
+- [x] Give every chart independent loading, skeleton, empty, error, and retry states; never hardcode analytics.
+- [x] Add accessible tabular alternatives and text summaries for Chart.js/ECharts visualizations.
+- [x] Document metric definitions, provider delays, time zones, and partial-data caveats.
 
 ### Supporting administration
 
-- [ ] Build notification center, unread state, preferences, deep links, and safe bulk actions.
-- [ ] Build team membership, invitation, role/permission assignment, removal, and pending-invitation workflows.
-- [ ] Build subscription status, entitlement, grace-period, and upgrade/contact workflows without bypassing server enforcement.
-- [ ] Build church settings for identity, brand, doctrine/content policies, services, defaults, integrations, and account preferences.
+- [x] Build notification center, unread state, preferences, deep links, and safe bulk actions.
+- [x] Build team membership, invitation, role/permission assignment, removal, and pending-invitation workflows.
+- [x] Build subscription status, entitlement, grace-period, and upgrade/contact workflows without bypassing server enforcement.
+- [x] Build church settings for identity, brand, doctrine/content policies, services, defaults, integrations, and account preferences.
 
 ## Phase 15 — Testing and quality assurance
 
