@@ -152,32 +152,32 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 7 — Sermon studio
 
-- [ ] Build the metadata panel for title, series, service date, speaker, scriptures, translation, audience, duration, tone, and status.
-- [ ] Integrate an accessible structured block-based or rich-text editor; do not use a plain textarea.
-- [ ] Build outline navigation for introduction, background, definitions, points/subpoints, examples, illustrations, applications, prophetic insights, altar call, conclusion, prayers, and declarations.
-- [ ] Add scripture, AI assistant, version history, comments, approval status, and export panels.
-- [ ] Support 15, 30, 45, 60, and 90 minute sermon targets.
-- [ ] Implement all required AI actions at section/document scope with previews, diffs, undo, and long-running job feedback.
-- [ ] Add keyboard shortcuts, focus-safe panel navigation, and accessible formatting controls.
-- [ ] Autosave locally and remotely, show save state, recover interrupted drafts, and handle local/server conflicts.
-- [ ] Add export formats supported by the backend without losing structure or scripture metadata.
+- [x] Build the metadata panel for title, series, service date, speaker, scriptures, translation, audience, duration, tone, and status.
+- [x] Integrate an accessible structured block-based or rich-text editor; do not use a plain textarea.
+- [x] Build outline navigation for introduction, background, definitions, points/subpoints, examples, illustrations, applications, prophetic insights, altar call, conclusion, prayers, and declarations.
+- [x] Add scripture, AI assistant, version history, comments, approval status, and export panels.
+- [x] Support 15, 30, 45, 60, and 90 minute sermon targets.
+- [x] Implement all required AI actions at section/document scope with previews, diffs, undo, and long-running job feedback.
+- [x] Add keyboard shortcuts, focus-safe panel navigation, and accessible formatting controls.
+- [x] Autosave locally and remotely, show save state, recover interrupted drafts, and handle local/server conflicts.
+- [x] Add export formats supported by the backend without losing structure or scripture metadata.
 
 ## Phase 8 — Prayer points and declarations
 
 ### Prayer points
 
-- [ ] Build prayer collection list, detail, generator, editor, and prayer-card preview.
-- [ ] Implement generation options for quantity, theme, scripture, category, tone, congregational response, scripture text, and declaration.
-- [ ] Support every required prayer category with a typed taxonomy.
-- [ ] Model and edit sequence, title, prayer text, scripture reference/quotation, prophetic response, and congregational response.
-- [ ] Implement accessible keyboard and pointer drag-and-drop reordering with persistence and rollback on failure.
-- [ ] Add draft/version/review/approval flows and generation progress.
+- [x] Build prayer collection list, detail, generator, editor, and prayer-card preview.
+- [x] Implement generation options for quantity, theme, scripture, category, tone, congregational response, scripture text, and declaration.
+- [x] Support every required prayer category with a typed taxonomy.
+- [x] Model and edit sequence, title, prayer text, scripture reference/quotation, prophetic response, and congregational response.
+- [x] Implement accessible keyboard and pointer drag-and-drop reordering with persistence and rollback on failure.
+- [x] Add draft/version/review/approval flows and generation progress.
 
 ### Prophetic declarations
 
-- [ ] Build list, generator, detail, and editor workflows for daily, weekly, monthly, service-opening, communion, offering, family, business, healing, and new-month declarations.
-- [ ] Support title, scripture foundation, first-person, congregational, short social, flyer, and video voice-over variants.
-- [ ] Add draft/version/review/approval flows and handoffs to flyer, video, and social workflows.
+- [x] Build list, generator, detail, and editor workflows for daily, weekly, monthly, service-opening, communion, offering, family, business, healing, and new-month declarations.
+- [x] Support title, scripture foundation, first-person, congregational, short social, flyer, and video voice-over variants.
+- [x] Add draft/version/review/approval flows and handoffs to flyer, video, and social workflows.
 
 ## Phase 9 — Flyer studio
 
