@@ -1,11 +1,31 @@
-import { Component, signal } from "@angular/core";
+import { Component, inject, signal } from "@angular/core";
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
-import type { CampaignSection } from "../../models/domain.models";
+import { DraftRepository } from "../../core/persistence/draft.repository";
+import type {
+  CampaignSection,
+  EntityId,
+  IsoDateTime,
+} from "../../models/domain.models";
+import { PlatformStateService } from "../../services/platform-state.service";
+
+interface MonthlyCampaignDraftPayload {
+  form: {
+    month: string;
+    focus: string;
+    scripture: string;
+    tone: string;
+    quantity: number;
+  };
+  sections: CampaignSection[];
+}
+
+const MONTHLY_CAMPAIGN_DRAFT_KEY = "monthly-campaign:current";
+const LOCAL_ORGANIZATION_ID = "local" as EntityId;
 @Component({
   standalone: true,
   imports: [ReactiveFormsModule],
@@ -96,7 +116,17 @@ import type { CampaignSection } from "../../models/domain.models";
           <label>Prayer point quantity</label
           ><input type="number" min="1" max="50" formControlName="quantity" />
         </div>
-        <button type="button" class="btn secondary">Save draft</button>
+        <button
+          type="button"
+          class="btn secondary"
+          [disabled]="savingDraft()"
+          (click)="saveDraft()"
+        >
+          {{ savingDraft() ? "Saving…" : "Save draft" }}
+        </button>
+        <p class="muted" role="status" aria-live="polite">
+          {{ draftStatus() }}
+        </p>
       </form>
       <section>
         <h2>Campaign completion</h2>
@@ -122,6 +152,10 @@ import type { CampaignSection } from "../../models/domain.models";
     </div>`,
 })
 export class CampaignPage {
+  private readonly drafts = inject(DraftRepository);
+  private readonly platform = inject(PlatformStateService);
+  readonly savingDraft = signal(false);
+  readonly draftStatus = signal("Not saved yet");
   readonly form = new FormGroup({
     month: new FormControl("2026-08", {
       nonNullable: true,
@@ -158,6 +192,57 @@ export class CampaignPage {
       locked: index < 2,
     })),
   );
+  async saveDraft(): Promise<void> {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.draftStatus.set("Complete the required brief fields before saving.");
+      this.platform.notify({
+        tone: "warning",
+        title: "Draft not saved",
+        message: "Month, spiritual focus, and main scripture are required.",
+      });
+      return;
+    }
+
+    this.savingDraft.set(true);
+    const savedAt = new Date().toISOString() as IsoDateTime;
+    const formValue = this.form.getRawValue();
+    const payload: MonthlyCampaignDraftPayload = {
+      form: formValue,
+      sections: this.sections(),
+    };
+
+    try {
+      await this.drafts.save({
+        key: MONTHLY_CAMPAIGN_DRAFT_KEY,
+        organizationId: LOCAL_ORGANIZATION_ID,
+        feature: "monthly-campaigns",
+        payload,
+        localRevision: Date.now(),
+        updatedAt: savedAt,
+        syncState: "local",
+      });
+
+      this.draftStatus.set(
+        `Draft saved locally at ${new Date(savedAt).toLocaleTimeString()}.`,
+      );
+      this.platform.notify({
+        tone: "success",
+        title: "Draft saved",
+        message: "Monthly campaign draft was saved locally for recovery.",
+      });
+    } catch {
+      this.draftStatus.set("Draft could not be saved. Please try again.");
+      this.platform.notify({
+        tone: "error",
+        title: "Draft save failed",
+        message: "Your monthly campaign draft could not be saved locally.",
+      });
+    } finally {
+      this.savingDraft.set(false);
+    }
+  }
+
   generate(id: string) {
     this.sections.update((items) =>
       items.map((s) =>
