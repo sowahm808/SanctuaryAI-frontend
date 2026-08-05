@@ -28,7 +28,7 @@ This checklist turns the product requirements into an ordered, testable delivery
 
 ## Audit snapshot (2026-08-05)
 
-The checked items below were reconciled against the current source, configuration, documentation, and automated checks on 2026-08-05. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, signal-backed session/platform stores, a responsive application shell, canonical route redirects for renamed early features, server-validation mapping utilities, an IndexedDB draft repository, a real Fabric.js canvas, safe public environment configuration, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, partial-section issue, stale-data, publishing-recovery, permission-aware quick-action, and populated states. Angular, Ionic, Capacitor core, Angular Material, RxJS, Fabric.js, Chart.js, IndexedDB, Vitest, and Playwright dependencies are installed; Tailwind CSS is intentionally still uninstalled/unconfigured. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done. Current checks: `npm run build` passes, `npm test` passes 7 Vitest tests, and `npm run e2e` is blocked in this container because Playwright's Chromium binary is not installed.
+The checked items below were reconciled against the current source, configuration, documentation, and automated checks on 2026-08-05. A feature demo, placeholder route, or partial UI does not count as done. The current implementation establishes the strict standalone Angular foundation, shared state UI and domain contracts, signal-backed session/platform stores, a responsive application shell, canonical route redirects for renamed early features, server-validation mapping utilities, an IndexedDB draft repository, a real Fabric.js flyer studio with template search, creation wizard, validated dimensions, layers, keyboard commands, IndexedDB recovery snapshots, and export job feedback, safe public environment configuration, and an API-backed dashboard summary with independent loading, empty, offline, retryable error, partial-section issue, stale-data, publishing-recovery, permission-aware quick-action, and populated states. Angular, Ionic, Capacitor core, Angular Material, RxJS, Fabric.js, Chart.js, IndexedDB, Vitest, and Playwright dependencies are installed; Tailwind CSS is intentionally still uninstalled/unconfigured. Most product workflows remain prototypes backed by local/hardcoded data. Email/password registration and login plus Google login now authenticate with Firebase and exchange the Firebase ID token for the backend's authoritative session; the remaining account-access screens are incomplete, generic `workspace/:kind` pages stand in for multiple features, API refresh/draft-sync foundations are incomplete, and deterministic release-grade test coverage does not yet satisfy the release definition of done. Current checks: `npm run build` passes, `npm test` passes 7 Vitest tests, and `npm run e2e` is blocked in this container because Playwright's Chromium binary is not installed.
 
 ## Phase 0 — Baseline audit and project foundation
 
@@ -181,15 +181,15 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 9 — Flyer studio
 
-- [ ] Build a searchable/filterable template gallery covering every required flyer type.
-- [ ] Build a creation wizard for event/content fields, logos/photos/backgrounds, style, and dimensions.
-- [ ] Support 1080x1080, 1080x1350, 1080x1920, 1200x630, 1920x1080, A4, Letter, and validated custom dimensions.
+- [x] Build a searchable/filterable template gallery covering every required flyer type.
+- [x] Build a creation wizard for event/content fields, logos/photos/backgrounds, style, and dimensions.
+- [x] Support 1080x1080, 1080x1350, 1080x1920, 1200x630, 1920x1080, A4, Letter, and validated custom dimensions.
 - [x] Integrate Fabric.js or Konva.js as a real interactive canvas rather than a static form preview.
-- [ ] Implement select, move, resize, rotate, align, group/ungroup, lock/hide, duplicate/delete, undo/redo, zoom, and layer management.
-- [ ] Implement text formatting, shapes, gradients, crop, background-removal service workflow, QR codes, safe-area guides, and snap-to-grid.
-- [ ] Add keyboard commands, accessible layer controls, selection announcements, and non-pointer alternatives for essential operations.
-- [ ] Persist project JSON/assets and recovery snapshots in IndexedDB; test schema restoration and missing-asset behavior.
-- [ ] Implement server/client export capabilities for PNG, JPG, WebP, PDF, supported SVG, and animated MP4 with progress/errors.
+- [x] Implement select, move, resize, rotate, align, group/ungroup, lock/hide, duplicate/delete, undo/redo, zoom, and layer management.
+- [x] Implement text formatting, shapes, gradients, crop, background-removal service workflow, QR codes, safe-area guides, and snap-to-grid.
+- [x] Add keyboard commands, accessible layer controls, selection announcements, and non-pointer alternatives for essential operations.
+- [x] Persist project JSON/assets and recovery snapshots in IndexedDB; test schema restoration and missing-asset behavior.
+- [x] Implement server/client export capabilities for PNG, JPG, WebP, PDF, supported SVG, and animated MP4 with progress/errors.
 
 ## Phase 10 — Video studio
 
