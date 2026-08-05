@@ -28,6 +28,7 @@ export const API_GROUPS = [
   "notifications",
   "users",
   "audit",
+  "jobs",
 ] as const;
 export type ApiGroup = (typeof API_GROUPS)[number];
 

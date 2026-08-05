@@ -65,6 +65,14 @@ These are the concrete routes emitted by the shared `ApiClientService` and curre
 | `POST` | `/prayers/:id/generate`                             | Generate prayer points                                         | `AsyncJob`            |
 | `POST` | `/declarations`                                     | Create a declaration workflow draft                            | `WorkflowDraft`       |
 | `POST` | `/declarations/:id/generate`                        | Generate declarations                                          | `AsyncJob`            |
+| `GET`  | `/jobs/:jobId`                                      | Poll generation progress and retrieve the terminal result      | `AsyncJob`            |
+| `POST` | `/jobs/:jobId/cancel`                               | Request cancellation of server-owned AI work                   | `AsyncJob`            |
+
+Generation endpoints must return a durable job identifier. The frontend polls
+the job resource until it reaches `completed`, `failed`, or `cancelled`; do not
+report a queued response as completed work. Progress must be a finite number
+from 0 through 100, and provider credentials and raw provider errors must never
+be returned to the browser.
 
 Common route issue: the broader delivery backlog describes future `POST /campaigns/drafts`, but the current frontend calls `POST /campaigns`. Backend teams can either support `POST /campaigns` now or coordinate a frontend change before removing that route.
 
@@ -72,7 +80,7 @@ Common route issue: the broader delivery backlog describes future `POST /campaig
 
 The shared client exposes these conventional routes for every allowed API group, even if not all are wired to active screens yet. Implementing consistent handlers across groups will reduce future route defects.
 
-Allowed groups are: `organizations`, `dashboard`, `themes`, `campaigns`, `sermons`, `prayers`, `declarations`, `flyers`, `videos`, `media`, `approvals`, `social-accounts`, `social-posts`, `calendar`, `analytics`, `notifications`, `users`, and `audit`.
+Allowed groups are: `organizations`, `dashboard`, `themes`, `campaigns`, `sermons`, `prayers`, `declarations`, `flyers`, `videos`, `media`, `approvals`, `social-accounts`, `social-posts`, `calendar`, `analytics`, `notifications`, `users`, `audit`, and `jobs`.
 
 For a group named `:group`, the client can emit:
 
