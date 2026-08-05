@@ -2,6 +2,7 @@ import { Injectable, inject } from "@angular/core";
 import { map, type Observable } from "rxjs";
 import { ApiClientService } from "../../core/api/api-client.service";
 import type { DashboardSummary } from "./dashboard.models";
+import { normalizeDashboardSummary } from "./dashboard-normalizer";
 
 @Injectable({ providedIn: "root" })
 export class DashboardService {
@@ -10,6 +11,6 @@ export class DashboardService {
   summary(): Observable<DashboardSummary> {
     return this.api
       .getSingleton<DashboardSummary>("dashboard", "summary")
-      .pipe(map((response) => response.data));
+      .pipe(map((response) => normalizeDashboardSummary(response.data)));
   }
 }
