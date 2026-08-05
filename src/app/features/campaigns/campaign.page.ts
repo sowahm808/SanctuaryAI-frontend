@@ -1,4 +1,5 @@
 import { Component, inject, signal } from "@angular/core";
+import { finalize, map, switchMap } from "rxjs";
 import {
   FormControl,
   FormGroup,
@@ -12,6 +13,10 @@ import type {
   IsoDateTime,
 } from "../../models/domain.models";
 import { PlatformStateService } from "../../services/platform-state.service";
+import {
+  CampaignService,
+  type CampaignGenerationBrief,
+} from "./campaign.service";
 
 interface MonthlyCampaignDraftPayload {
   form: {
@@ -82,7 +87,9 @@ const LOCAL_ORGANIZATION_ID = "local" as EntityId;
           work.
         </p>
       </div>
-      <button class="btn" (click)="generateAll()">✦ Generate all</button>
+      <button class="btn" [disabled]="generating()" (click)="generateAll()">
+        {{ generating() ? "Queueing…" : "✦ Generate all" }}
+      </button>
     </div>
     <div class="grid split">
       <form class="card form" [formGroup]="form">
@@ -140,7 +147,7 @@ const LOCAL_ORGANIZATION_ID = "local" as EntityId;
               </div>
               <button
                 class="btn secondary"
-                [disabled]="s.locked"
+                [disabled]="s.locked || generating()"
                 (click)="generate(s.id)"
               >
                 {{ s.progress ? "Open" : "Generate" }}
@@ -154,7 +161,11 @@ const LOCAL_ORGANIZATION_ID = "local" as EntityId;
 export class CampaignPage {
   private readonly drafts = inject(DraftRepository);
   private readonly platform = inject(PlatformStateService);
+  private readonly campaigns = inject(CampaignService);
+  private campaignId?: EntityId;
+  private campaignRevision?: number;
   readonly savingDraft = signal(false);
+  readonly generating = signal(false);
   readonly draftStatus = signal("Not saved yet");
   readonly form = new FormGroup({
     month: new FormControl("2026-08", {
@@ -243,18 +254,140 @@ export class CampaignPage {
     }
   }
 
-  generate(id: string) {
-    this.sections.update((items) =>
-      items.map((s) =>
-        s.id === id ? { ...s, progress: 100, status: "Awaiting Approval" } : s,
-      ),
+  generate(id: string): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.notifyInvalidBrief();
+      return;
+    }
+
+    const section = this.sections().find((item) => item.id === id);
+    if (!section || section.locked) return;
+
+    this.generating.set(true);
+    this.ensureCampaignDraft()
+      .pipe(
+        switchMap((draft) =>
+          this.campaigns.regenerateSection(
+            draft.id,
+            sectionKey(section.title),
+            draft.revision,
+          ),
+        ),
+        finalize(() => this.generating.set(false)),
+      )
+      .subscribe({
+        next: (job) => {
+          this.sections.update((items) =>
+            items.map((s) =>
+              s.id === id
+                ? {
+                    ...s,
+                    progress: job.progress,
+                    status:
+                      job.status === "failed" ? "Failed" : "Awaiting Approval",
+                  }
+                : s,
+            ),
+          );
+          this.platform.notify({
+            tone: "success",
+            title: "Generation queued",
+            message: `${section.title} is running on the backend AI workflow.`,
+          });
+        },
+        error: () => this.notifyGenerationFailure(section.title),
+      });
+  }
+
+  generateAll(): void {
+    this.form.markAllAsTouched();
+    if (this.form.invalid) {
+      this.notifyInvalidBrief();
+      return;
+    }
+
+    this.generating.set(true);
+    this.ensureCampaignDraft()
+      .pipe(
+        switchMap((draft) =>
+          this.campaigns.generateAll(draft.id, draft.revision),
+        ),
+        finalize(() => this.generating.set(false)),
+      )
+      .subscribe({
+        next: (job) => {
+          this.sections.update((items) =>
+            items.map((s) =>
+              s.locked
+                ? s
+                : {
+                    ...s,
+                    progress: job.progress,
+                    status:
+                      job.status === "failed" ? "Failed" : "Awaiting Approval",
+                  },
+            ),
+          );
+          this.platform.notify({
+            tone: "success",
+            title: "Campaign generation queued",
+            message: "The backend AI workflow is generating the monthly plan.",
+          });
+        },
+        error: () => this.notifyGenerationFailure("Campaign generation"),
+      });
+  }
+
+  private ensureCampaignDraft() {
+    const brief = this.generationBrief();
+    return this.campaigns.createDraft(brief).pipe(
+      mapDraft((draft) => {
+        this.campaignId = draft.id;
+        this.campaignRevision = draft.revision;
+        return { id: this.campaignId, revision: this.campaignRevision };
+      }),
     );
   }
-  generateAll() {
-    this.sections.update((items) =>
-      items.map((s) =>
-        s.locked ? s : { ...s, progress: 100, status: "Awaiting Approval" },
-      ),
-    );
+
+  private generationBrief(): CampaignGenerationBrief {
+    const value = this.form.getRawValue();
+    return {
+      month: value.month,
+      focus: value.focus,
+      scripture: value.scripture,
+      tone: value.tone,
+      prayerQuantity: value.quantity,
+    };
   }
+
+  private notifyInvalidBrief(): void {
+    this.platform.notify({
+      tone: "warning",
+      title: "Brief incomplete",
+      message:
+        "Month, spiritual focus, and main scripture are required before AI generation.",
+    });
+  }
+
+  private notifyGenerationFailure(scope: string): void {
+    this.platform.notify({
+      tone: "error",
+      title: "AI workflow not queued",
+      message: `${scope} could not reach the backend API. Please try again.`,
+    });
+  }
+}
+
+function sectionKey(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function mapDraft<T>(
+  project: (value: T) => { id: EntityId; revision?: number },
+) {
+  return map(project);
 }

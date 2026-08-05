@@ -1,11 +1,21 @@
 import { TitleCasePipe } from "@angular/common";
-import { Component, computed, effect, input, signal } from "@angular/core";
+import { finalize, switchMap } from "rxjs";
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from "@angular/core";
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
+import type { EntityId } from "../../models/domain.models";
+import { WorkflowService } from "./workflow.service";
 
 interface FeaturePanel {
   readonly title: string;
@@ -667,8 +677,13 @@ const DEFAULT_CONFIG: FeatureConfig = {
       <div class="actions">
         <button class="btn secondary" type="button" (click)="saveDraft()">
           Save draft</button
-        ><button class="btn" type="button" (click)="runPrimary()">
-          ✦ {{ config().primaryAction }}
+        ><button
+          class="btn"
+          type="button"
+          [disabled]="busy()"
+          (click)="runPrimary()"
+        >
+          {{ busy() ? "Queueing…" : "✦ " + config().primaryAction }}
         </button>
       </div>
     </header>
@@ -758,8 +773,12 @@ const DEFAULT_CONFIG: FeatureConfig = {
     </div>`,
 })
 export class WorkspacePage {
+  private readonly workflows = inject(WorkflowService);
+  private draftId?: EntityId;
+  private draftRevision?: number;
   readonly kind = input("content");
   readonly activeStatus = signal("Draft");
+  readonly busy = signal(false);
   readonly records = signal<
     readonly { title: string; owner: string; updated: string; status: string }[]
   >([]);
@@ -813,17 +832,60 @@ export class WorkspacePage {
     this.rebuildForm();
     this.form.markAllAsTouched();
     if (this.form.invalid) return;
-    this.activeStatus.set(this.config().statuses[1] ?? "Running");
-    this.records.update((items) => [
-      {
-        title:
-          this.form.controls[this.controlName(this.config().fields[0])]
-            ?.value || this.config().title,
-        owner: "AI workflow",
-        updated: "Queued just now",
-        status: this.activeStatus(),
-      },
-      ...items,
-    ]);
+
+    const title =
+      this.form.controls[this.controlName(this.config().fields[0])]?.value ||
+      this.config().title;
+
+    this.busy.set(true);
+    this.workflows
+      .createDraft(this.kind(), this.brief())
+      .pipe(
+        switchMap((draft) => {
+          this.draftId = draft.id;
+          this.draftRevision = draft.revision;
+          return this.workflows.generate(
+            this.kind(),
+            this.draftId,
+            this.draftRevision,
+          );
+        }),
+        finalize(() => this.busy.set(false)),
+      )
+      .subscribe({
+        next: (job) => {
+          this.activeStatus.set(this.config().statuses[1] ?? "Running");
+          this.records.update((items) => [
+            {
+              title,
+              owner: "Backend AI workflow",
+              updated: `${job.status} · ${job.progress}%`,
+              status: this.activeStatus(),
+            },
+            ...items,
+          ]);
+        },
+        error: () => {
+          this.activeStatus.set("Draft");
+          this.records.update((items) => [
+            {
+              title,
+              owner: "Backend API",
+              updated: "Request failed",
+              status: "Failed",
+            },
+            ...items,
+          ]);
+        },
+      });
+  }
+
+  private brief(): Record<string, string> {
+    return Object.fromEntries(
+      this.config().fields.map((field) => [
+        this.controlName(field),
+        this.form.controls[this.controlName(field)]?.value ?? "",
+      ]),
+    );
   }
 }
