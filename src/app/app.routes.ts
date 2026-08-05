@@ -110,10 +110,9 @@ export const routes: Routes = [
       },
       {
         path: "content-calendar",
-        data: { kind: "calendar" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/content-calendar.page").then(
+            (m) => m.ContentCalendarPage,
           ),
       },
       {
@@ -125,43 +124,37 @@ export const routes: Routes = [
       },
       {
         path: "analytics",
-        data: { kind: "analytics" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/analytics-admin.page").then(
+            (m) => m.AnalyticsAdminPage,
           ),
       },
       {
         path: "team-management",
         canActivate: [permissionGuard],
-        data: { permissions: ["users.manage"], kind: "team" },
+        data: { permissions: ["users.manage"] },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/analytics-admin.page").then(
+            (m) => m.AnalyticsAdminPage,
           ),
       },
       {
         path: "social-accounts",
-        data: { kind: "social-accounts" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
-          ),
+          import("./features/social/social.page").then((m) => m.SocialPage),
       },
       {
         path: "notifications",
-        data: { kind: "notifications" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/analytics-admin.page").then(
+            (m) => m.AnalyticsAdminPage,
           ),
       },
       {
         path: "subscription",
-        data: { kind: "subscription" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/analytics-admin.page").then(
+            (m) => m.AnalyticsAdminPage,
           ),
       },
       {
@@ -176,10 +169,10 @@ export const routes: Routes = [
       {
         path: "settings",
         canActivate: [permissionGuard],
-        data: { permissions: ["settings.manage"], kind: "settings" },
+        data: { permissions: ["settings.manage"] },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/analytics-admin.page").then(
+            (m) => m.AnalyticsAdminPage,
           ),
       },
       { path: "campaigns", pathMatch: "full", redirectTo: "monthly-campaigns" },
