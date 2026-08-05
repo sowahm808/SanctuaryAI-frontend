@@ -193,20 +193,20 @@ The checked items below were reconciled against the current source, configuratio
 
 ## Phase 10 — Video studio
 
-- [ ] Build project creation for animated flyer, scripture, prayer, sermon quote, invitation, countdown, declaration, and recap videos.
-- [ ] Build a vertical 9:16 canvas, scene list, overlays, asset picker, audio, voice-over, captions, timing, transitions, and preview.
-- [ ] Support 15, 30, 60, and 90 second durations with duration validation.
-- [ ] Autosave projects and preserve uploads/drafts during interruption.
-- [ ] Integrate backend MP4 rendering with queued/running/completed/failed status, polling or events, cancellation, and retry.
-- [ ] Provide caption editing, audio controls, and reduced-motion/accessibility considerations.
+- [x] Build project creation for animated flyer, scripture, prayer, sermon quote, invitation, countdown, declaration, and recap videos.
+- [x] Build a vertical 9:16 canvas, scene list, overlays, asset picker, audio, voice-over, captions, timing, transitions, and preview.
+- [x] Support 15, 30, 60, and 90 second durations with duration validation.
+- [x] Autosave projects and preserve uploads/drafts during interruption.
+- [x] Integrate backend MP4 rendering with queued/running/completed/failed status, polling or events, cancellation, and retry.
+- [x] Provide caption editing, audio controls, and reduced-motion/accessibility considerations.
 
 ## Phase 11 — Media library
 
-- [ ] Build searchable grid/list views for logos, people photos, backgrounds, designs, videos, audio, documents, and generated assets.
-- [ ] Implement folders, tags, filters, selection, rename, delete confirmation, archive, restore, and usage references.
-- [ ] Implement single and bulk upload with validation, progress, cancellation, retry, and duplicate handling.
-- [ ] Display dimensions, size, type, ownership, upload state, alt text, and relevant media metadata.
-- [ ] Prevent destructive changes to in-use assets without showing references and impact.
+- [x] Build searchable grid/list views for logos, people photos, backgrounds, designs, videos, audio, documents, and generated assets.
+- [x] Implement folders, tags, filters, selection, rename, delete confirmation, archive, restore, and usage references.
+- [x] Implement single and bulk upload with validation, progress, cancellation, retry, and duplicate handling.
+- [x] Display dimensions, size, type, ownership, upload state, alt text, and relevant media metadata.
+- [x] Prevent destructive changes to in-use assets without showing references and impact.
 
 ## Phase 12 — Social accounts, publisher, and content calendar
 
