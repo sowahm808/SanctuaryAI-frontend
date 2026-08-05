@@ -2,6 +2,36 @@
 
 This guide defines the server work required by the API-backed frontend. The browser must never manufacture dashboard content, authorization, job completion, or provider health. All endpoints are relative to `/api/v1`, use the authenticated organization from the server session, and return `X-Correlation-ID` on success and failure.
 
+## Backend update audit (2026-08-05)
+
+The frontend was re-audited for backend delivery impact on 2026-08-05. The guide below is the authoritative backlog for backend teams and separates API-backed surfaces from prototype-only frontend workflows. Treat every prototype-only workflow as a backend blocker even when the UI demo, IndexedDB recovery, or local signals appear complete.
+
+### Current integration status
+
+| Area                                                                                                                                           | Frontend state                                                                                                                                            | Backend delivery status               | Required backend update                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Authentication/session                                                                                                                         | Firebase login exchanges an ID token for a backend session and protected routes restore through the session endpoint.                                     | Partially integrated.                 | Keep `POST /auth/firebase`, `GET /auth/session`, and `POST /auth/logout` aligned with `BACKEND_AUTH_GUIDE.md`; add deterministic fixtures for QA accounts and organization claims.               |
+| Organization onboarding                                                                                                                        | The 11-step onboarding form submits through the API client and expects an authoritative organization/profile response.                                    | Backend required.                     | Implement create/join, resumable onboarding drafts, completion, upload jobs, invitation jobs, and non-blocking social handoff recovery.                                                          |
+| Dashboard                                                                                                                                      | The dashboard consumes `GET /dashboard/summary` and renders loading, empty, stale, partial-issue, publishing-failure, quick-action, and populated states. | Highest priority integrated contract. | Provide the full read model, ETag support, permission filtering, partial-section issues, stale markers, and contract tests before demo data can be removed from backend fixtures.                |
+| Campaigns and themes                                                                                                                           | Frontend screens model generation, review, locking, versions, and approval flows.                                                                         | Backend required.                     | Deliver optimistic-concurrency workflow APIs plus observable generation jobs; generated candidates must not overwrite approved/locked content.                                                   |
+| Sermons, prayers, declarations, flyers, videos, social publishing, reviews, analytics, notifications, team, subscription, settings, audit logs | Frontend has a mix of feature demos, local state, IndexedDB drafts, and placeholder workspace routes.                                                     | Not production integrated.            | Implement authoritative CRUD/workflow APIs, permission gates, async jobs, drafts, audit history, search/filtering, and export/publishing contracts before marking these phases backend-complete. |
+
+### Backend update priorities
+
+1. Stabilize the shared API envelope, problem-detail errors, CSRF behavior, correlation IDs, idempotency keys, pagination cursors, and optimistic-concurrency semantics across all endpoint groups.
+2. Complete the dashboard summary read model because it is already API-backed and is the primary shell landing page after authentication/onboarding.
+3. Complete organization onboarding and church-profile settings so session claims, `organizationSetupComplete`, subscription state, and default ministry voice are authoritative.
+4. Ship the shared async job service for generation, uploads, rendering, exports, and publishing before feature-specific endpoints depend on it.
+5. Implement campaign and theme workflow APIs next because downstream sermon, prayer, declaration, flyer, video, and social workflows consume their structured outputs.
+6. Replace remaining prototype-backed feature screens with organization-scoped APIs in the phase order listed in the outstanding implementation map.
+
+### Contract hygiene for backend updates
+
+- Backend migrations must preserve additive compatibility for existing frontend fields; remove or rename fields only after a coordinated frontend release.
+- Every new endpoint must include contract tests for authenticated organization isolation, permission denial, validation mapping, conflict handling, idempotent retry, correlation ID propagation, and secret redaction.
+- Prefer typed structured fields over markdown blobs for ministry content so downstream workflows can reuse scriptures, hashtags, captions, design notes, and publishing metadata safely.
+- Backend fixtures used by end-to-end tests must be deterministic and must not depend on third-party provider availability. Provider outage, expired-token, and quota states should be simulated through backend fixtures.
+
 ## Dashboard summary contract
 
 Implement `GET /dashboard/summary`. The endpoint should aggregate independently sourced sections without leaking another organization. A successful response is:
@@ -273,9 +303,9 @@ Approval must lock the approved theme revision from unauthorized edits. Template
 5. Saving as a template preserves allowed structured fields and excludes provider secrets, raw tokens, and unsafe prompt internals.
 6. Scripture, tone, audience, date, and event validation return field-addressable `422` errors that frontend forms can map directly.
 
-## Outstanding implementation map after frontend audit (2026-08-04)
+## Outstanding implementation map after frontend audit (2026-08-05)
 
-The frontend audit found that Phases 7–16 still need authoritative backend implementations before their checklist items can be marked complete. The frontend may expose placeholder or local-prototype screens for some of these areas, but the server remains the source of truth for workflow state, authorization, jobs, drafts, provider health, and audit history.
+The 2026-08-05 frontend audit confirmed that Phases 7–16 still need authoritative backend implementations before their checklist items can be marked complete. The frontend may expose placeholder or local-prototype screens for some of these areas, but the server remains the source of truth for workflow state, authorization, jobs, drafts, provider health, and audit history.
 
 ### Sermon studio
 
