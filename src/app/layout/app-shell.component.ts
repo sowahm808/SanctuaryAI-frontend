@@ -100,14 +100,10 @@ interface NavItem {
         letter-spacing: -0.025em;
         white-space: nowrap;
       }
-      .brand-mark {
-        display: grid;
-        place-items: center;
+      .brand-logo {
         width: 32px;
         height: 32px;
         border-radius: 10px;
-        color: #fff;
-        background: linear-gradient(135deg, #8e70dc, #5d3eb0);
         box-shadow: 0 6px 16px #0003;
       }
       .church {
@@ -395,7 +391,17 @@ interface NavItem {
       (mouseenter)="menuOpen.set(true)"
       (mouseleave)="menuOpen.set(false)"
     >
-      <div class="brand"><span class="brand-mark">✦</span> SanctuaryAI</div>
+      <div class="brand">
+        <img
+          class="brand-logo"
+          src="/logo.svg"
+          alt=""
+          width="32"
+          height="32"
+          aria-hidden="true"
+        />
+        SanctuaryAI
+      </div>
       <div class="church">
         <span class="church-logo">{{ session.organizationInitial() }}</span
         ><span
