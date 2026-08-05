@@ -24,8 +24,6 @@ describe("API routing configuration", () => {
   it("proxies production API calls to the versioned Render backend", () => {
     const netlifyConfig = readFileSync("netlify.toml", "utf8");
 
-    expect(netlifyConfig).toContain(
-      `to = "${versionedBackendUrl}/:splat"`,
-    );
+    expect(netlifyConfig).toContain(`to = "${versionedBackendUrl}/:splat"`);
   });
 });
