@@ -105,11 +105,8 @@ export const routes: Routes = [
       },
       {
         path: "video-studio",
-        data: { kind: "videos" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
-          ),
+          import("./features/video-studio.page").then((m) => m.VideoStudioPage),
       },
       {
         path: "content-calendar",
@@ -121,10 +118,9 @@ export const routes: Routes = [
       },
       {
         path: "media-library",
-        data: { kind: "media" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/media-library.page").then(
+            (m) => m.MediaLibraryPage,
           ),
       },
       {
