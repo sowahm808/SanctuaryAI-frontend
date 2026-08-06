@@ -394,10 +394,10 @@ interface NavItem {
       <div class="brand">
         <img
           class="brand-logo"
-          src="/sanctuaryAiLogo.png"
+          src="/inverselogo.png"
           alt=""
-          width="32"
-          height="32"
+          width="50"
+          height="50"
           aria-hidden="true"
         />
         SanctuaryAI
