@@ -21,4 +21,27 @@ loadRuntimeConfig(environment.configUrl)
       ],
     }),
   )
-  .catch(console.error);
+  .catch((error: unknown) => {
+    console.error("SanctuaryAI failed to start.", error);
+    showStartupError();
+  });
+
+function showStartupError(): void {
+  const root = document.querySelector("app-root");
+  if (!root) return;
+
+  root.innerHTML = `
+    <main class="startup-status startup-status--error" role="alert">
+      <img src="/logo.svg" alt="SanctuaryAI" class="startup-status__logo" />
+      <div class="startup-status__card">
+        <p class="startup-status__eyebrow">Connection problem</p>
+        <h1>We couldn’t load SanctuaryAI</h1>
+        <p>The application configuration is unavailable. Check your connection and try again.</p>
+        <button type="button" class="startup-status__retry">Try again</button>
+      </div>
+    </main>`;
+
+  root
+    .querySelector<HTMLButtonElement>(".startup-status__retry")
+    ?.addEventListener("click", () => window.location.reload());
+}

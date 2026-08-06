@@ -13,6 +13,17 @@
     <link rel="apple-touch-icon" href="/logo.png" />
   </head>
   <body>
-    <app-root></app-root><noscript>SanctuaryAI requires JavaScript.</noscript>
+    <app-root>
+      <main class="startup-status" aria-live="polite" aria-busy="true">
+        <img src="/logo.svg" alt="SanctuaryAI" class="startup-status__logo" />
+        <div class="startup-status__card">
+          <p class="startup-status__eyebrow">SanctuaryAI</p>
+          <h1>Preparing your workspace…</h1>
+          <p>Please wait while the application loads.</p>
+          <span class="startup-status__spinner" aria-hidden="true"></span>
+        </div>
+      </main>
+    </app-root>
+    <noscript>SanctuaryAI requires JavaScript.</noscript>
   </body>
 </html>
