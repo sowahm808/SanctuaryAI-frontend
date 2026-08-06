@@ -396,8 +396,8 @@ interface NavItem {
           class="brand-logo"
           src="/inverselogo.png"
           alt=""
-          width="50"
-          height="50"
+          width="150"
+          height="150"
           aria-hidden="true"
         />
         SanctuaryAI
