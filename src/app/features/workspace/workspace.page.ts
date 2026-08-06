@@ -1,5 +1,5 @@
 import { TitleCasePipe } from "@angular/common";
-import { finalize, switchMap } from "rxjs";
+import { finalize, switchMap, type Subscription } from "rxjs";
 import {
   Component,
   computed,
@@ -14,8 +14,8 @@ import {
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
-import type { EntityId } from "../../models/domain.models";
-import { AiJobService } from "../../core/ai/ai-job.service";
+import type { AsyncJob, EntityId } from "../../models/domain.models";
+import { AiJobService, isTerminalJob } from "../../core/ai/ai-job.service";
 import { WorkflowService } from "./workflow.service";
 
 interface FeaturePanel {
@@ -686,7 +686,7 @@ const DEFAULT_CONFIG: FeatureConfig = {
         >
           {{ busy() ? "Queueing…" : "✦ " + config().primaryAction }}
         </button>
-        @if (currentJobId()) {
+        @if (currentJobId() && cancellationSupported()) {
           <button class="btn secondary" type="button" (click)="cancelJob()">
             Cancel AI job
           </button>
@@ -732,7 +732,7 @@ const DEFAULT_CONFIG: FeatureConfig = {
       </form>
       <section class="grid">
         <article class="card">
-          <h2>Active work queue</h2>
+          <h2>{{ busy() ? "Active work queue" : "Recent work" }}</h2>
           @for (record of records(); track record.title) {
             <div class="record">
               <span
@@ -783,10 +783,12 @@ export class WorkspacePage {
   private readonly aiJobs = inject(AiJobService);
   private draftId?: EntityId;
   private draftRevision?: number;
+  private activeRun?: Subscription;
   readonly kind = input("content");
   readonly activeStatus = signal("Draft");
   readonly busy = signal(false);
   readonly currentJobId = signal<EntityId | undefined>(undefined);
+  readonly cancellationSupported = signal(false);
   readonly records = signal<
     readonly { title: string; owner: string; updated: string; status: string }[]
   >([]);
@@ -846,7 +848,7 @@ export class WorkspacePage {
       this.config().title;
 
     this.busy.set(true);
-    this.workflows
+    this.activeRun = this.workflows
       .createDraft(this.kind(), this.brief())
       .pipe(
         switchMap((draft) => {
@@ -860,31 +862,18 @@ export class WorkspacePage {
         }),
         switchMap((job) => {
           this.currentJobId.set(job.id);
+          this.cancellationSupported.set(job.cancellationSupported === true);
           return this.aiJobs.watch(job);
         }),
         finalize(() => {
           this.busy.set(false);
           this.currentJobId.set(undefined);
+          this.cancellationSupported.set(false);
+          this.activeRun = undefined;
         }),
       )
       .subscribe({
-        next: (job) => {
-          const status =
-            job.status === "completed"
-              ? (this.config().statuses[2] ?? "Complete")
-              : job.status === "failed" || job.status === "cancelled"
-                ? job.status
-                : (this.config().statuses[1] ?? "Running");
-          this.activeStatus.set(status);
-          this.records.set([
-            {
-              title,
-              owner: "Backend AI workflow",
-              updated: job.message ?? `${job.status} · ${job.progress}%`,
-              status,
-            },
-          ]);
-        },
+        next: (job) => this.applyJob(job, title),
         error: () => {
           this.activeStatus.set("Draft");
           this.records.update((items) => [
@@ -904,8 +893,33 @@ export class WorkspacePage {
     const id = this.currentJobId();
     if (!id) return;
     this.aiJobs.cancel(id).subscribe({
+      next: (job) => {
+        this.applyJob(job);
+        if (isTerminalJob(job)) this.activeRun?.unsubscribe();
+      },
       error: () => this.activeStatus.set("Cancellation failed"),
     });
+  }
+
+  private applyJob(job: AsyncJob, title = this.config().title): void {
+    const status =
+      job.status === "completed"
+        ? (this.config().statuses[2] ?? "Complete")
+        : job.status === "failed" || job.status === "cancelled"
+          ? job.status[0].toUpperCase() + job.status.slice(1)
+          : (this.config().statuses[1] ?? "Running");
+    this.activeStatus.set(status);
+    this.cancellationSupported.set(
+      !isTerminalJob(job) && job.cancellationSupported === true,
+    );
+    this.records.set([
+      {
+        title,
+        owner: "Backend AI workflow",
+        updated: job.message ?? `${job.status} · ${job.progress}%`,
+        status,
+      },
+    ]);
   }
 
   private brief(): Record<string, string> {

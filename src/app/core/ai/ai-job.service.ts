@@ -12,7 +12,15 @@ import type { AsyncJob, EntityId } from "../../models/domain.models";
 import { ApiClientService } from "../api/api-client.service";
 import { validJob } from "./ai-job.validation";
 
-const TERMINAL_STATUSES = new Set(["completed", "failed", "cancelled"]);
+const TERMINAL_STATUSES: ReadonlySet<AsyncJob["status"]> = new Set([
+  "completed",
+  "failed",
+  "cancelled",
+]);
+
+export function isTerminalJob(job: Pick<AsyncJob, "status">): boolean {
+  return TERMINAL_STATUSES.has(job.status);
+}
 
 /** Tracks server-owned AI work. The browser never calls an AI provider directly. */
 @Injectable({ providedIn: "root" })
@@ -29,7 +37,7 @@ export class AiJobService {
       subscriber.complete();
     }).pipe(
       expand((job) =>
-        TERMINAL_STATUSES.has(job.status)
+        isTerminalJob(job)
           ? []
           : timer(1500).pipe(
               switchMap(() =>
@@ -50,7 +58,7 @@ export class AiJobService {
           previous.progress === current.progress &&
           previous.message === current.message,
       ),
-      takeWhile((job) => !TERMINAL_STATUSES.has(job.status), true),
+      takeWhile((job) => !isTerminalJob(job), true),
     );
   }
 

@@ -210,6 +210,10 @@ export interface AsyncJob<TResult = unknown> {
   message?: string;
   result?: TResult;
   error?: ApiError;
+  retryable?: boolean;
+  cancellationSupported?: boolean;
+  sourceRevision?: string;
+  targetFields?: readonly string[];
 }
 export interface UploadProgress {
   fileName: string;
