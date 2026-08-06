@@ -258,6 +258,11 @@ The server must deny unauthorized edits to locked sections with `403` or stale-r
 
 ## Theme generator backend contract
 
+For diagnosing and correcting `503 theme_generation_failed` responses, including
+the required asynchronous job boundary, provider error taxonomy, retry policy,
+correlation tracing, and staging checks, follow
+[`THEME_GENERATION_503_GUIDE.md`](./THEME_GENERATION_503_GUIDE.md).
+
 Implement the Phase 6 theme APIs as reusable, versioned content generation workflows. Theme generation may be launched from a campaign or as a standalone template-driven workflow, but server authorization, versioning, review, and approval rules must be identical in both paths.
 
 ### Theme input and output model
