@@ -199,7 +199,6 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
     `,
   ],
   template: `<section class="brand">
-  <div class="logo">✦ SanctuaryAI</div>
 
   <div class="brand-logo">
     <img
