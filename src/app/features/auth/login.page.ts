@@ -146,25 +146,86 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
           padding: 1.25rem;
         }
       }
+      .brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.5rem;
+}
+
+.brand-logo {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-logo {
+    display: block;
+
+    /* Responsive */
+    width: min(320px, 80vw);
+    height: auto;
+
+    /* Prevent distortion */
+    object-fit: contain;
+
+    /* Keep perfectly centered */
+    margin: 0 auto;
+
+    /* Remove inline image spacing */
+    vertical-align: middle;
+}
+
+.brand-content{
+    max-width:700px;
+}
+
+.eyebrow{
+    color:#c8bafd;
+}
+
+.brand-content p{
+    color:#d8d0ee;
+}
+.hero-logo{
+    width: clamp(280px, 35vw, 440px);
+    height:auto;
+    display:block;
+    margin:0 auto 1rem;
+}
     `,
   ],
   template: `<section class="brand">
-      <div class="logo">✦ SanctuaryAI</div>
-      <!-- use the inverse logo -->
+  <div class="logo">✦ SanctuaryAI</div>
 
-      <img src="/inverselogo.png" alt="SanctuaryAI Logo" width="400" height="400" />
-      <div>
-        <p class="eyebrow" style="color:#c8bafd">
-          Ministry content operating system
-        </p>
-        <h1 class="quote">From Divine Inspiration to Ministry Impact.</h1>
-        <p style="color:#d8d0ee">
-          Plan, create, approve and publish scripture-centered content with your
-          whole ministry team.
-        </p>
-      </div>
-      <small>Secure • collaborative • church-centered</small>
-    </section>
+  <div class="brand-logo">
+    <img
+      src="/inverselogo.png"
+      alt="SanctuaryAI Logo"
+      class="hero-logo"
+    />
+  </div>
+
+  <div class="brand-content">
+    <p class="eyebrow">
+      Ministry content operating system
+    </p>
+
+    <h1 class="quote">
+      From Divine Inspiration to Ministry Impact.
+    </h1>
+
+    <p>
+      Plan, create, approve and publish scripture-centered content with your
+      whole ministry team.
+    </p>
+  </div>
+
+  <small>Secure • collaborative • church-centered</small>
+</section>
     <main class="auth">
       <div class="panel">
         <p class="eyebrow">Secure access</p>
