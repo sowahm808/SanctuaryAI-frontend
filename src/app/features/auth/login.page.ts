@@ -150,6 +150,9 @@ const COPY: Record<AuthMode, { title: string; description: string }> = {
   ],
   template: `<section class="brand">
       <div class="logo">✦ SanctuaryAI</div>
+      <!-- use the inverse logo -->
+
+      <img src="/inverselogo.png" alt="SanctuaryAI Logo" width="400" height="400" />
       <div>
         <p class="eyebrow" style="color:#c8bafd">
           Ministry content operating system
