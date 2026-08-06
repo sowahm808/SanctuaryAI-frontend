@@ -6,6 +6,7 @@ export interface RuntimeConfig {
 }
 
 let runtimeConfig: RuntimeConfig | undefined;
+const defaultApiBaseUrl = "/api";
 
 export async function loadRuntimeConfig(configUrl: string): Promise<void> {
   const response = await fetch(configUrl, {
@@ -28,21 +29,30 @@ export function getRuntimeConfig(): RuntimeConfig {
 }
 
 export function parseRuntimeConfig(value: unknown): RuntimeConfig {
-  if (
-    !isRecord(value) ||
-    !validApiBaseUrl(value["apiBaseUrl"]) ||
-    !isRecord(value["firebase"])
-  ) {
+  if (!isRecord(value)) {
     throw new Error("The public application configuration is invalid.");
   }
-  const firebase = value["firebase"];
-  for (const key of ["apiKey", "authDomain", "projectId", "appId"] as const) {
+
+  // API responses normally use the shared `{ data, meta, correlationId }`
+  // envelope, while older deployments return the configuration directly.
+  const config = "data" in value ? value["data"] : value;
+  if (!isRecord(config) || !isRecord(config["firebase"])) {
+    throw new Error("The public application configuration is invalid.");
+  }
+
+  const apiBaseUrl = config["apiBaseUrl"] ?? defaultApiBaseUrl;
+  if (!validApiBaseUrl(apiBaseUrl)) {
+    throw new Error("The public application API base URL is invalid.");
+  }
+
+  const firebase = config["firebase"];
+  for (const key of ["apiKey", "authDomain", "projectId"] as const) {
     if (typeof firebase[key] !== "string" || firebase[key].trim() === "") {
       throw new Error(`The public Firebase configuration is missing ${key}.`);
     }
   }
   return {
-    apiBaseUrl: value["apiBaseUrl"],
+    apiBaseUrl,
     firebase: firebase as FirebaseOptions,
   };
 }
