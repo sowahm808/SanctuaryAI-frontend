@@ -14,7 +14,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { environment } from "../../environments/environment";
+import { getRuntimeConfig } from "../core/config/runtime-config";
 
 /** Owns the Firebase SDK boundary. Provider credentials are never exposed to components. */
 @Injectable({ providedIn: "root" })
@@ -24,7 +24,7 @@ export class FirebaseAuthService {
 
   constructor() {
     const app =
-      getApps()[0] ?? initializeApp(environment.firebase, "sanctuary-ai");
+      getApps()[0] ?? initializeApp(getRuntimeConfig().firebase, "sanctuary-ai");
     this.auth = getAuth(app);
     this.ready = setPersistence(this.auth, browserLocalPersistence);
   }

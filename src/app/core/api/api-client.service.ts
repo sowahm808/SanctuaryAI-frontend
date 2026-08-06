@@ -7,7 +7,7 @@ import type {
   EntityId,
   QueryOptions,
 } from "../../models/domain.models";
-import { environment } from "../../../environments/environment";
+import { getRuntimeConfig } from "../config/runtime-config";
 
 export const API_GROUPS = [
   "organizations",
@@ -116,7 +116,7 @@ export class ApiClientService {
     );
   }
   private url(group: ApiGroup): string {
-    return `${environment.apiBaseUrl}/${group}`;
+    return `${getRuntimeConfig().apiBaseUrl}/${group}`;
   }
 }
 

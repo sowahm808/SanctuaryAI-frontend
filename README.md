@@ -12,7 +12,13 @@ npm run e2e
 npm run build
 ```
 
-The checked-in environment files contain safe public configuration and default to the same-origin `/api` proxy. Replace them at build/deploy time for another public API base URL; never place credentials, provider tokens, signing keys, or refresh tokens in an Angular environment file. OAuth credentials and refresh tokens must remain server-side.
+The application loads deployment-specific public settings from
+`GET /api/config/public` before Angular starts. The endpoint must return the API
+base URL and the Firebase Web configuration described in
+`docs/BACKEND_API_ROUTE_GUIDE.md`. This keeps project identifiers and endpoints
+out of compiled bundles and allows promotion of one build between environments.
+Never return credentials, provider tokens, signing keys, or refresh tokens from
+this endpoint. OAuth credentials and refresh tokens must remain server-side.
 
 For mobile builds, install the target package, run `npx cap add ios` or `npx cap add android`, build the web application, and then run `npx cap sync`. Configure platform deep links and backend OAuth redirect allow-lists for the application identifier before signing a release.
 

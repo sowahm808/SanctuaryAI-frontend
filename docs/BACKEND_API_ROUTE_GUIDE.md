@@ -22,6 +22,32 @@ Backend route handlers should therefore be mounted at `/api/v1/*`. Do not redire
 - Return `X-Correlation-ID` on success and failure. Error bodies should use stable problem codes and safe validation details.
 - Resolve organization, role, permissions, and subscription from the server session on every request. Ignore organization IDs from the browser unless the endpoint explicitly supports selecting among memberships already authorized for the session.
 
+## Runtime public configuration
+
+Angular does not contain deployment-specific API or Firebase values. Before it
+bootstraps, the browser requests `GET /api/config/public`. This route is public,
+must not set or require a session, and returns an unwrapped document:
+
+```json
+{
+  "apiBaseUrl": "/api",
+  "firebase": {
+    "apiKey": "<Firebase Web API key>",
+    "authDomain": "<Firebase auth domain>",
+    "projectId": "<Firebase project ID>",
+    "appId": "<Firebase Web app ID>"
+  }
+}
+```
+
+`apiBaseUrl` must be non-empty and have no trailing slash. Firebase's
+`storageBucket`, `messagingSenderId`, and `measurementId` may also be returned
+when enabled. These Firebase Web identifiers are public configuration, not
+server credentials. Never include service-account keys, OAuth client secrets,
+provider access tokens, refresh tokens, or signing material. Return
+`Cache-Control: no-cache` so a promoted frontend build receives the settings of
+the environment where it is running.
+
 ## Auth routes currently represented in the frontend
 
 All paths below are backend paths after the proxy prefix, so implement them under `/api/v1`.
