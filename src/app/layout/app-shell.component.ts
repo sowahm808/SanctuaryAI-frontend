@@ -394,7 +394,7 @@ interface NavItem {
       <div class="brand">
         <img
           class="brand-logo"
-          src="/logo.svg"
+          src="/sanctuaryAiLogo.png"
           alt=""
           width="32"
           height="32"
