@@ -7,11 +7,18 @@ import { AppComponent } from "./app/app.component";
 import { ChunkLoadErrorHandler } from "./app/core/error/chunk-load-error-handler";
 import { routes } from "./app/app.routes";
 import { authInterceptor } from "./app/interceptors/auth.interceptor";
-bootstrapApplication(AppComponent, {
-  providers: [
-    provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([authInterceptor])),
-    provideAnimationsAsync(),
-    { provide: ErrorHandler, useClass: ChunkLoadErrorHandler },
-  ],
-}).catch(console.error);
+import { loadRuntimeConfig } from "./app/core/config/runtime-config";
+import { environment } from "./environments/environment";
+
+loadRuntimeConfig(environment.configUrl)
+  .then(() =>
+    bootstrapApplication(AppComponent, {
+      providers: [
+        provideRouter(routes, withComponentInputBinding()),
+        provideHttpClient(withInterceptors([authInterceptor])),
+        provideAnimationsAsync(),
+        { provide: ErrorHandler, useClass: ChunkLoadErrorHandler },
+      ],
+    }),
+  )
+  .catch(console.error);

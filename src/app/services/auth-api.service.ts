@@ -2,7 +2,7 @@ import { HttpClient } from "@angular/common/http";
 import { Injectable, inject } from "@angular/core";
 import { Observable, map, of, switchMap } from "rxjs";
 import type { Permission, Role, User } from "../models/domain.models";
-import { environment } from "../../environments/environment";
+import { getRuntimeConfig } from "../core/config/runtime-config";
 import { normalizeFirebaseExchange } from "./auth-result";
 
 export interface AuthSession {
@@ -31,7 +31,7 @@ export interface Registration extends Credentials {
 @Injectable({ providedIn: "root" })
 export class AuthApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly baseUrl = `${getRuntimeConfig().apiBaseUrl}/auth`;
   session(): Observable<AuthSession> {
     return this.http
       .get<AuthSession | ApiEnvelope<AuthSession>>(`${this.baseUrl}/session`, {

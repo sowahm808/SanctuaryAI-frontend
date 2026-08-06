@@ -264,8 +264,9 @@ post-auth redirect URLs from the API until that policy exists.
 
 ## Backend implementation checklist
 
-1. Configure Firebase Admin for project `sanctuaryai-b1012` and validate ID
-   tokens server-side; use the verified UID as the immutable external identity.
+1. Configure Firebase Admin for the same project returned by the runtime public
+   configuration endpoint and validate ID tokens server-side; use the verified
+   UID as the immutable external identity.
 2. Implement `/auth/firebase` and `/auth/session` first using the canonical
    schema and cookie rules above.
 3. Reconcile users and memberships transactionally. Decide and test policy for

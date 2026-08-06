@@ -8,8 +8,8 @@ const versionedBackendUrl = `${backendOrigin}/api/v1`;
 
 describe("API routing configuration", () => {
   it("keeps browser API calls on the same-origin proxy path", () => {
-    expect(environment.apiBaseUrl).toBe("/api");
-    expect(productionEnvironment.apiBaseUrl).toBe("/api");
+    expect(environment.configUrl).toBe("/api/config/public");
+    expect(productionEnvironment.configUrl).toBe("/api/config/public");
   });
 
   it("proxies local development API calls to the Render backend", () => {
