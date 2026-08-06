@@ -205,3 +205,90 @@ h3 {
     transition: none !important;
   }
 }
+/* Visible before Angular bootstraps, and retained with recovery controls if startup fails. */
+.startup-status {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: linear-gradient(145deg, #21163e, #3a2671);
+  color: #21163e;
+}
+
+.startup-status__logo {
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  width: min(190px, 40vw);
+  max-height: 56px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.startup-status__card {
+  width: min(480px, 100%);
+  padding: clamp(2rem, 6vw, 3.5rem);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 64px rgb(10 4 28 / 28%);
+  text-align: center;
+}
+
+.startup-status__card h1 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: clamp(1.65rem, 5vw, 2.35rem);
+}
+
+.startup-status__card p {
+  color: #655d73;
+}
+
+.startup-status__eyebrow {
+  margin: 0;
+  color: #6842c2 !important;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.startup-status__spinner {
+  display: block;
+  width: 34px;
+  height: 34px;
+  margin: 1.5rem auto 0;
+  border: 3px solid #e4ddf5;
+  border-top-color: #6842c2;
+  border-radius: 50%;
+  animation: startup-spin 0.8s linear infinite;
+}
+
+.startup-status__retry {
+  margin-top: 1rem;
+  padding: 0.75rem 1.25rem;
+  border: 0;
+  border-radius: 10px;
+  background: #6842c2;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.startup-status__retry:focus-visible {
+  outline: 3px solid #aa91e4;
+  outline-offset: 3px;
+}
+
+@keyframes startup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .startup-status__spinner {
+    animation: none;
+    border-top-color: #e4ddf5;
+  }
+}
