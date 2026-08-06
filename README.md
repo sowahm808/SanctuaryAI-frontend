@@ -13,8 +13,8 @@ npm run build
 ```
 
 The application loads deployment-specific public settings from
-`GET /api/config/public` before Angular starts. The endpoint must return the API
-base URL and the Firebase Web configuration described in
+`GET /api/config/public` before Angular starts. The endpoint must return the
+Firebase Web configuration described in
 `docs/BACKEND_API_ROUTE_GUIDE.md`. This keeps project identifiers and endpoints
 out of compiled bundles and allows promotion of one build between environments.
 Never return credentials, provider tokens, signing keys, or refresh tokens from

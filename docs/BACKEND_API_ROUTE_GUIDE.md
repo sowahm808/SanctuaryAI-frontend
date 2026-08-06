@@ -24,27 +24,34 @@ Backend route handlers should therefore be mounted at `/api/v1/*`. Do not redire
 
 ## Runtime public configuration
 
-Angular does not contain deployment-specific API or Firebase values. Before it
+Angular does not contain deployment-specific Firebase values. Before it
 bootstraps, the browser requests `GET /api/config/public`. This route is public,
-must not set or require a session, and returns an unwrapped document:
+must not set or require a session, and may return the configuration in the
+standard API response envelope:
 
 ```json
 {
-  "apiBaseUrl": "/api",
-  "firebase": {
-    "apiKey": "<Firebase Web API key>",
-    "authDomain": "<Firebase auth domain>",
-    "projectId": "<Firebase project ID>",
-    "appId": "<Firebase Web app ID>"
-  }
+  "data": {
+    "apiBaseUrl": "/api",
+    "firebase": {
+      "apiKey": "<Firebase Web API key>",
+      "authDomain": "<Firebase auth domain>",
+      "projectId": "<Firebase project ID>",
+      "appId": "<Firebase Web app ID>"
+    }
+  },
+  "meta": {},
+  "correlationId": "<request correlation ID>"
 }
 ```
 
-`apiBaseUrl` must be non-empty and have no trailing slash. Firebase's
-`storageBucket`, `messagingSenderId`, and `measurementId` may also be returned
-when enabled. These Firebase Web identifiers are public configuration, not
-server credentials. Never include service-account keys, OAuth client secrets,
-provider access tokens, refresh tokens, or signing material. Return
+For compatibility, the frontend also accepts the configuration as an unwrapped
+document. `apiBaseUrl` is optional and defaults to the same-origin `/api` proxy;
+when supplied, it must be non-empty and have no trailing slash. Firebase's
+`appId`, `storageBucket`, `messagingSenderId`, and `measurementId` may also be
+returned when enabled. These Firebase Web identifiers are public configuration,
+not server credentials. Never include service-account keys, OAuth client
+secrets, provider access tokens, refresh tokens, or signing material. Return
 `Cache-Control: no-cache` so a promoted frontend build receives the settings of
 the environment where it is running.
 
