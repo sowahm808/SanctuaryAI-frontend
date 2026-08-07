@@ -1,5 +1,12 @@
 import { HttpErrorResponse } from "@angular/common/http";
-import { Component, DestroyRef, OnInit, inject, signal } from "@angular/core";
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   FormControl,
@@ -11,6 +18,8 @@ import { debounceTime, finalize } from "rxjs";
 import { ReviewContentPreviewComponent } from "./review-content-preview.component";
 import type {
   ReviewContentType,
+  ReviewAuditEntry,
+  ReviewComment,
   ReviewDetail,
   ReviewQueueFilters,
   ReviewQueueItem,
@@ -85,7 +94,7 @@ import { ReviewsService } from "./reviews.service";
     </p>
     @if (error()) {
       <div class="notice error error-state" role="alert">
-        <h3>Unable to load review queue</h3>
+        <h3>Review action could not be completed</h3>
         <p>{{ error() }}</p>
         <button type="button" (click)="loadQueue()">Retry</button>
       </div>
@@ -128,8 +137,13 @@ import { ReviewsService } from "./reviews.service";
         <h2>Permission-aware queue</h2>
         @if (loadingQueue()) {
           <p class="muted" aria-live="polite">Loading review queue…</p>
-        } @else if (!error()) {
-          @for (r of queue(); track r.id) {
+        } @else if (queueError()) {
+          <div class="notice error" role="alert">
+            <p>{{ queueError() }}</p>
+            <button type="button" (click)="loadQueue()">Retry</button>
+          </div>
+        } @else {
+          @for (r of filteredQueue(); track r.id) {
             <article
               class="review"
               [class.active]="selectedId() === r.id"
@@ -150,7 +164,9 @@ import { ReviewsService } from "./reviews.service";
               >
             </article>
           } @empty {
-            <div class="empty">There is no content awaiting your review.</div>
+            <div class="empty">
+              No content is currently awaiting your review.
+            </div>
           }
         }
       </aside>
@@ -281,7 +297,7 @@ import { ReviewsService } from "./reviews.service";
             }
           </div>
           <h3>Comments</h3>
-          @for (comment of item.comments; track comment.id) {
+          @for (comment of comments(); track comment.id) {
             <div class="comment">
               <b>{{ comment.authorName }}</b> · {{ comment.createdAt }}
               <p>{{ comment.body }}</p>
@@ -290,7 +306,7 @@ import { ReviewsService } from "./reviews.service";
             <p class="muted">No comments yet.</p>
           }
           <h3>Immutable audit history</h3>
-          @for (entry of item.auditHistory; track entry.id) {
+          @for (entry of audits(); track entry.id) {
             <div class="audit">
               <b>{{ entry.action }}</b>
               <p>{{ entry.actorName }} · {{ entry.timestamp }}</p>
@@ -311,11 +327,22 @@ import { ReviewsService } from "./reviews.service";
 export class ReviewsPage implements OnInit {
   private readonly reviews = inject(ReviewsService);
   private readonly destroyRef = inject(DestroyRef);
-  readonly queue = signal<readonly ReviewQueueItem[]>([]);
+  readonly queue = signal<ReviewQueueItem[]>([]);
+  readonly filteredQueue = computed<readonly ReviewQueueItem[]>(() => {
+    const queue = this.queue();
+    if (!Array.isArray(queue)) {
+      console.error("Review queue is not an array:", queue);
+      return [];
+    }
+    return queue;
+  });
   readonly selectedId = signal<string | null>(null);
   readonly selected = signal<ReviewDetail | null>(null);
+  readonly comments = signal<ReviewComment[]>([]);
+  readonly audits = signal<ReviewAuditEntry[]>([]);
   readonly reviewers = signal<readonly { id: string; name: string }[]>([]);
   readonly loadingQueue = signal(false);
+  readonly queueError = signal<string | null>(null);
   readonly loadingDetail = signal(false);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
@@ -349,7 +376,7 @@ export class ReviewsPage implements OnInit {
   }
   loadQueue(): void {
     this.loadingQueue.set(true);
-    this.error.set(null);
+    this.queueError.set(null);
     const f = this.filters.getRawValue();
     const filters: ReviewQueueFilters = {
       type: (f.type || undefined) as ReviewContentType | undefined,
@@ -364,22 +391,34 @@ export class ReviewsPage implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (items) => {
-          this.queue.set(items);
+        next: (response) => {
+          console.log("Approvals API response:", response);
+          const items = response?.data?.items;
+          if (!Array.isArray(items)) {
+            console.error("Unexpected approval queue response:", response);
+            this.queue.set([]);
+            this.selectedId.set(null);
+            this.clearDetail();
+            this.queueError.set(
+              "The server returned an invalid review queue response.",
+            );
+            return;
+          }
+          this.queue.set([...items]);
           const id = items.some((x) => x.id === this.selectedId())
             ? this.selectedId()
             : (items[0]?.id ?? null);
           if (id) this.select(id);
           else {
             this.selectedId.set(null);
-            this.selected.set(null);
+            this.clearDetail();
           }
         },
         error: (e) => {
           this.queue.set([]);
           this.selectedId.set(null);
-          this.selected.set(null);
-          this.error.set(this.message(e));
+          this.clearDetail();
+          this.queueError.set(this.message(e));
         },
       });
   }
@@ -395,9 +434,9 @@ export class ReviewsPage implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (detail) => this.selected.set(detail),
+        next: (detail) => this.applyDetail(detail),
         error: (e) => {
-          this.selected.set(null);
+          this.clearDetail();
           this.error.set(this.message(e));
         },
       });
@@ -472,7 +511,7 @@ export class ReviewsPage implements OnInit {
       )
       .subscribe({
         next: (detail) => {
-          this.selected.set(detail);
+          this.applyDetail(detail);
           this.decision.controls.comment.reset();
           this.decision.controls.reason.reset();
           this.success.set(success);
@@ -491,6 +530,22 @@ export class ReviewsPage implements OnInit {
       this.selectedId.set(null);
       this.select(id);
     }
+  }
+  private applyDetail(detail: ReviewDetail): void {
+    const comments = detail?.comments;
+    const auditHistory = detail?.auditHistory;
+    this.comments.set(Array.isArray(comments) ? comments : []);
+    this.audits.set(Array.isArray(auditHistory) ? auditHistory : []);
+    this.selected.set({
+      ...detail,
+      comments: this.comments(),
+      auditHistory: this.audits(),
+    });
+  }
+  private clearDetail(): void {
+    this.selected.set(null);
+    this.comments.set([]);
+    this.audits.set([]);
   }
   private message(error: unknown): string {
     if (!(error instanceof HttpErrorResponse))

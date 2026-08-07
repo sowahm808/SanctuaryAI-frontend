@@ -1,7 +1,11 @@
 import { Injectable, inject } from "@angular/core";
 import { map, type Observable } from "rxjs";
 import { ApiClientService } from "../../core/api/api-client.service";
-import type { CursorPage, EntityId } from "../../models/domain.models";
+import type {
+  ApiResponse,
+  CursorPage,
+  EntityId,
+} from "../../models/domain.models";
 import type {
   AddReviewCommentRequest,
   AssignReviewRequest,
@@ -19,15 +23,13 @@ export class ReviewsService {
 
   getReviewQueue(
     filters: ReviewQueueFilters = {},
-  ): Observable<readonly ReviewQueueItem[]> {
+  ): Observable<ApiResponse<CursorPage<ReviewQueueItem>>> {
     const queryFilters = Object.fromEntries(
       Object.entries(filters).filter(
         (entry): entry is [string, string] => typeof entry[1] === "string",
       ),
     );
-    return this.api
-      .collection<ReviewQueueItem>("approvals", queryFilters)
-      .pipe(map((r) => r.data));
+    return this.api.collectionPage<ReviewQueueItem>("approvals", queryFilters);
   }
   getReviewById(id: string): Observable<ReviewDetail> {
     return this.api
