@@ -1,7 +1,6 @@
 import { Component, input, output } from "@angular/core";
 import type { EntityId } from "../../models/domain.models";
 import type { DeclarationSummary } from "./declaration.models";
-import { declarationTitle, statusLabel } from "./declaration.models";
 @Component({
   selector: "app-declaration-recent-work",
   standalone: true,
@@ -86,8 +85,8 @@ import { declarationTitle, statusLabel } from "./declaration.models";
             (click)="selected.emit(item.id)"
           >
             <span class="top"
-              ><b>{{ title(item) }}</b
-              ><span class="badge">{{ status(item.status) }}</span></span
+              ><b>{{ item.title }}</b
+              ><span class="badge">{{ item.statusLabel }}</span></span
             ><span class="muted"
               >{{ item.declarationType || "Prophetic" }} ·
               {{ item.audience?.join(", ") || "Audience not set" }}</span
@@ -96,11 +95,17 @@ import { declarationTitle, statusLabel } from "./declaration.models";
                 ><b>{{
                   item.primaryScripture?.reference || "Scripture not set"
                 }}</b
-                ><br /><small [title]="item.updatedAt">{{
-                  relative(item.updatedAt)
-                }}</small></span
-              ><b>v{{ item.revision }}</b></span
-            >
+                ><br />
+                @if (item.updatedAt) {
+                  <small [title]="item.updatedAt">{{
+                    relative(item.updatedAt)
+                  }}</small>
+                }
+              </span>
+              @if (item.revisionLabel) {
+                <b>{{ item.revisionLabel }}</b>
+              }
+            </span>
           </button>
         }
       </div>
@@ -114,8 +119,6 @@ export class DeclarationRecentWorkComponent {
   error = input<string | null>(null);
   selected = output<EntityId>();
   refresh = output<void>();
-  title = declarationTitle;
-  status = statusLabel;
   relative(value: string) {
     const d = new Date(value),
       days = Math.floor((Date.now() - d.getTime()) / 86400000);

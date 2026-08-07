@@ -1,5 +1,5 @@
-import { Injectable, inject } from "@angular/core";
-import type { Observable } from "rxjs";
+import { Injectable, inject, isDevMode } from "@angular/core";
+import { map, type Observable } from "rxjs";
 import {
   ApiClientService,
   resourcePath,
@@ -12,23 +12,53 @@ import type {
   DeclarationJob,
   DeclarationRecord,
   DeclarationSummary,
+  DeclarationSummaryDto,
   DeclarationTimelineEvent,
   DeclarationVariant,
   DeclarationVersion,
   RefineAction,
   VariantKind,
 } from "./declaration.models";
+import { toDeclarationSummaryView } from "./declaration.models";
 @Injectable({ providedIn: "root" })
 export class DeclarationService {
   private api = inject(ApiClientService);
   list(): Observable<CursorPage<DeclarationSummary>> {
     return this.api
-      .list<DeclarationSummary>("declarations", {
+      .list<DeclarationSummaryDto>("declarations", {
         limit: 20,
         sort: "updatedAt",
         direction: "desc",
       })
-      .pipe(unwrapCursorPage());
+      .pipe(
+        unwrapCursorPage(),
+        map((page) => ({
+          ...page,
+          items: page.items.flatMap((dto) => {
+            const item = toDeclarationSummaryView(dto);
+            if (!item) {
+              if (isDevMode())
+                console.warn(
+                  "Ignoring malformed declaration summary without an id.",
+                  dto,
+                );
+              return [];
+            }
+            if (dto.status !== item.status || item.revision === null) {
+              if (isDevMode())
+                console.warn(
+                  "Loaded a legacy declaration using compatibility defaults.",
+                  {
+                    id: item.id,
+                    status: dto.status,
+                    revision: dto.revision,
+                  },
+                );
+            }
+            return [item];
+          }),
+        })),
+      );
   }
   get(id: EntityId): Observable<DeclarationRecord> {
     return this.api
