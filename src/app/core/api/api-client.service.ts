@@ -98,6 +98,17 @@ export class ApiClientService {
       { withCredentials: true },
     );
   }
+  patchResource<TBody extends object, TResult>(
+    group: ApiGroup,
+    resource: string,
+    body: TBody,
+  ): Observable<ApiResponse<TResult>> {
+    return this.http.patch<ApiResponse<TResult>>(
+      `${this.url(group)}/${resource}`,
+      body,
+      { withCredentials: true },
+    );
+  }
   postResource<TBody extends object, TResult>(
     group: ApiGroup,
     resource: string,
