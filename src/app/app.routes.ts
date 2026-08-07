@@ -94,10 +94,9 @@ export const routes: Routes = [
 
       {
         path: "declarations",
-        data: { kind: "declarations" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/declarations/prophetic-declaration.page").then(
+            (m) => m.PropheticDeclarationPage,
           ),
       },
       {
