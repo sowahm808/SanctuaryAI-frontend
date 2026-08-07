@@ -1,5 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import type { Observable } from "rxjs";
+import { map, type Observable } from "rxjs";
 import {
   ApiClientService,
   resourcePath,
@@ -9,6 +9,7 @@ import type { CursorPage, EntityId } from "../../models/domain.models";
 import type {
   PrayerApproval,
   PrayerDraftForm,
+  PrayerDetailDto,
   PrayerJob,
   PrayerPoint,
   PrayerRecord,
@@ -16,6 +17,7 @@ import type {
   PrayerTimelineEvent,
   PrayerVersion,
 } from "./prayer.models";
+import { toPrayerView } from "./prayer.models";
 
 export const PRAYER_LIST_OPTIONS = {
   limit: 20,
@@ -36,28 +38,30 @@ export class PrayerService {
       .pipe(unwrapCursorPage());
   }
   get(id: EntityId): Observable<PrayerRecord> {
-    return this.api.get<PrayerRecord>("prayers", id).pipe(unwrapData());
+    return this.api
+      .get<PrayerDetailDto>("prayers", id)
+      .pipe(unwrapData(), map(toPrayerView));
   }
   create(brief: PrayerDraftForm): Observable<PrayerRecord> {
     return this.api
-      .create<{ brief: PrayerDraftForm }, PrayerRecord>("prayers", { brief })
-      .pipe(unwrapData());
+      .create<{ brief: PrayerDraftForm }, PrayerDetailDto>("prayers", { brief })
+      .pipe(unwrapData(), map(toPrayerView));
   }
   save(
     id: EntityId,
     brief: PrayerDraftForm,
-    expectedRevision: number,
+    expectedRevision: string,
   ): Observable<PrayerRecord> {
     return this.api
       .update<
-        { brief: PrayerDraftForm; expectedRevision: number },
-        PrayerRecord
+        { brief: PrayerDraftForm; expectedRevision: string },
+        PrayerDetailDto
       >("prayers", id, { brief, expectedRevision })
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toPrayerView));
   }
-  generate(id: EntityId, revision: number): Observable<PrayerJob> {
+  generate(id: EntityId, revision: string): Observable<PrayerJob> {
     return this.api
-      .postResource<{ revision: number }, PrayerJob>(
+      .postResource<{ revision: string }, PrayerJob>(
         "prayers",
         resourcePath(id, "generate"),
         { revision },
@@ -87,30 +91,30 @@ export class PrayerService {
   }
   submitReview(id: EntityId, versionId: EntityId): Observable<PrayerRecord> {
     return this.api
-      .postResource<{ versionId: EntityId }, PrayerRecord>(
+      .postResource<{ versionId: EntityId }, PrayerDetailDto>(
         "prayers",
         resourcePath(id, "submit-review"),
         { versionId },
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toPrayerView));
   }
   createRevision(id: EntityId): Observable<PrayerRecord> {
     return this.api
-      .postResource<Record<string, never>, PrayerRecord>(
+      .postResource<Record<string, never>, PrayerDetailDto>(
         "prayers",
         resourcePath(id, "revisions"),
         {},
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toPrayerView));
   }
   updatePoint(id: EntityId, point: PrayerPoint): Observable<PrayerRecord> {
     return this.api
-      .patchResource<PrayerPoint, PrayerRecord>(
+      .patchResource<PrayerPoint, PrayerDetailDto>(
         "prayers",
         resourcePath(id, "points", point.id),
         point,
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toPrayerView));
   }
   pointAction(
     id: EntityId,
@@ -130,11 +134,11 @@ export class PrayerService {
     pointIds: readonly EntityId[],
   ): Observable<PrayerRecord> {
     return this.api
-      .putResource<{ pointIds: readonly EntityId[] }, PrayerRecord>(
+      .putResource<{ pointIds: readonly EntityId[] }, PrayerDetailDto>(
         "prayers",
         resourcePath(id, "points", "order"),
         { pointIds },
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toPrayerView));
   }
 }

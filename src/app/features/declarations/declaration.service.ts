@@ -18,6 +18,7 @@ import type {
   DeclarationVariant,
   DeclarationVersion,
   RefineAction,
+  RevisionToken,
   VariantKind,
 } from "./declaration.models";
 import {
@@ -72,27 +73,26 @@ export class DeclarationService {
   }
   create(brief: DeclarationDraftForm): Observable<DeclarationRecord> {
     return this.api
-      .create<{ brief: DeclarationDraftForm }, DeclarationRecord>(
-        "declarations",
-        { brief },
-      )
-      .pipe(unwrapData());
+      .create<{ brief: DeclarationDraftForm }, DeclarationDto>("declarations", {
+        brief,
+      })
+      .pipe(unwrapData(), map(toDeclarationView));
   }
   save(
     id: EntityId,
     brief: DeclarationDraftForm,
-    expectedRevision: number,
+    expectedRevision: RevisionToken,
   ): Observable<DeclarationRecord> {
     return this.api
       .update<
-        { brief: DeclarationDraftForm; expectedRevision: number },
-        DeclarationRecord
+        { brief: DeclarationDraftForm; expectedRevision: RevisionToken },
+        DeclarationDto
       >("declarations", id, { brief, expectedRevision })
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toDeclarationView));
   }
-  generate(id: EntityId, revision: number): Observable<DeclarationJob> {
+  generate(id: EntityId, revision: RevisionToken): Observable<DeclarationJob> {
     return this.api
-      .postResource<{ revision: number }, DeclarationJob>(
+      .postResource<{ revision: RevisionToken }, DeclarationJob>(
         "declarations",
         resourcePath(id, "generate"),
         { revision },
@@ -134,12 +134,12 @@ export class DeclarationService {
     variant: DeclarationVariant,
   ): Observable<DeclarationRecord> {
     return this.api
-      .patchResource<{ content: string }, DeclarationRecord>(
+      .patchResource<{ content: string }, DeclarationDto>(
         "declarations",
         resourcePath(id, "variants", variant.id),
         { content: variant.content },
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toDeclarationView));
   }
   variantAction(
     id: EntityId,
@@ -171,21 +171,21 @@ export class DeclarationService {
     versionId: EntityId,
   ): Observable<DeclarationRecord> {
     return this.api
-      .postResource<{ versionId: EntityId }, DeclarationRecord>(
+      .postResource<{ versionId: EntityId }, DeclarationDto>(
         "declarations",
         resourcePath(id, "submit-review"),
         { versionId },
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toDeclarationView));
   }
   createRevision(id: EntityId): Observable<DeclarationRecord> {
     return this.api
-      .postResource<{}, DeclarationRecord>(
+      .postResource<{}, DeclarationDto>(
         "declarations",
         resourcePath(id, "revisions"),
         {},
       )
-      .pipe(unwrapData());
+      .pipe(unwrapData(), map(toDeclarationView));
   }
   compare(
     id: EntityId,
