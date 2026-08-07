@@ -2,10 +2,8 @@ import { Component, computed, input, output, signal } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
   PRAYER_CATEGORIES,
-  formatScripture,
-  prayerTitle,
   type PrayerStatus,
-  type PrayerSummary,
+  type PrayerSummaryView,
 } from "./prayer.models";
 @Component({
   selector: "app-prayer-recent-work",
@@ -15,14 +13,12 @@ import {
     `
       .head,
       .filters,
-      .item,
       .meta {
         display: flex;
         gap: 0.75rem;
         align-items: center;
       }
-      .head,
-      .item {
+      .head {
         justify-content: space-between;
       }
       .head h2 {
@@ -42,11 +38,17 @@ import {
       }
       .list {
         display: grid;
-        gap: 0.35rem;
+        gap: 0.25rem;
       }
       .item {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 1rem;
         width: 100%;
         border: 0;
+        border-bottom: 1px solid
+          color-mix(in srgb, var(--line) 65%, transparent);
         border-radius: 12px;
         background: transparent;
         text-align: left;
@@ -56,17 +58,41 @@ import {
       .item:hover {
         background: #f7f5fc;
       }
+      .item:focus-visible {
+        outline: 2px solid var(--violet);
+        outline-offset: 2px;
+      }
       .item.selected {
         background: #f0ecfb;
         box-shadow: inset 3px 0 var(--violet);
       }
       .item strong {
         display: block;
-        margin-bottom: 0.3rem;
+        color: var(--ink);
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+      }
+      .item-left {
+        min-width: 0;
+      }
+      .theme {
+        display: block;
+        margin-bottom: 0.35rem;
+      }
+      .content-meta {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        align-items: center;
       }
       .meta {
         justify-content: flex-end;
         flex-wrap: wrap;
+        max-width: 17rem;
+      }
+      .version {
+        color: #432a91;
+        font-size: 0.8rem;
       }
       .skeleton {
         height: 4.4rem;
@@ -94,7 +120,7 @@ import {
         }
         .item {
           align-items: flex-start;
-          flex-direction: column;
+          grid-template-columns: 1fr;
         }
         .meta {
           justify-content: flex-start;
@@ -121,7 +147,13 @@ import {
         <option value="">All categories</option>
         @for (value of categories; track value) {
           <option [value]="value">{{ value }}</option>
-        }
+        }</select
+      ><select aria-label="Filter status" [(ngModel)]="statusFilter">
+        <option value="">All statuses</option>
+        <option value="draft">Draft</option>
+        <option value="pending_approval">Awaiting review</option>
+        <option value="changes_requested">Changes requested</option>
+        <option value="approved">Approved</option>
       </select>
     </div>
     @if (loading()) {
@@ -143,27 +175,53 @@ import {
             [attr.aria-current]="item.id === selectedId() ? 'true' : null"
             (click)="selected.emit(item)"
           >
-            <div>
-              <strong>{{ title(item) }}</strong
-              ><span class="muted"
-                >{{ item.pointCount }} prayer points ·
-                {{ scripture(item.primaryScripture) }}</span
-              ><br /><small>{{
-                item.theme || item.category || "Prayer collection"
-              }}</small>
+            <div class="item-left">
+              <strong>{{ item.title }}</strong>
+              @if (item.theme) {
+                <small class="muted theme">{{ item.theme }}</small>
+              }
+              <div class="content-meta muted">
+                @if (item.prayerPointCount !== undefined) {
+                  <small>{{ item.prayerPointCount }} prayer points</small>
+                }
+                @if (
+                  item.prayerPointCount !== undefined && item.scriptureLabel
+                ) {
+                  <small aria-hidden="true">·</small>
+                }
+                @if (item.scriptureLabel) {
+                  <small>{{ item.scriptureLabel }}</small>
+                }
+                <small>{{ item.categoryLabel }}</small>
+              </div>
             </div>
             <div class="meta">
-              <small class="muted">{{ relative(item.updatedAt) }}</small
-              ><span class="badge">{{ status(item.status) }}</span
-              ><b>v{{ item.revision }}</b>
+              <small class="muted">{{ item.updatedLabel }}</small
+              ><span class="badge">{{ item.statusLabel }}</span>
+              @if (item.versionLabel) {
+                <b class="version">{{ item.versionLabel }}</b>
+              }
             </div>
           </button>
         } @empty {
           <div class="empty">
-            <b>No prayer collections yet.</b>
-            <p class="muted">
-              Create your first prayer collection from the brief.
-            </p>
+            @if (items().length) {
+              <b>No prayer collections match your filters.</b>
+              <p>
+                <button
+                  class="btn secondary"
+                  type="button"
+                  (click)="clearFilters()"
+                >
+                  Clear filters
+                </button>
+              </p>
+            } @else {
+              <b>No prayer collections yet.</b>
+              <p class="muted">
+                Create your first collection using the brief on the left.
+              </p>
+            }
           </div>
         }
       </div>
@@ -171,48 +229,31 @@ import {
   </section>`,
 })
 export class PrayerRecentWorkComponent {
-  readonly items = input.required<readonly PrayerSummary[]>();
+  readonly items = input.required<readonly PrayerSummaryView[]>();
   readonly selectedId = input<string | null>(null);
   readonly loading = input(false);
   readonly error = input<string | null>(null);
-  readonly selected = output<PrayerSummary>();
+  readonly selected = output<PrayerSummaryView>();
   readonly refresh = output<void>();
   readonly query = signal("");
   readonly category = signal("");
+  readonly statusFilter = signal<PrayerStatus | "">("");
   readonly categories = PRAYER_CATEGORIES;
   readonly filtered = computed(() => {
-    const q = this.query().toLowerCase();
+    const q = this.query().trim().toLocaleLowerCase();
     return this.items().filter(
       (i) =>
         (!this.category() || i.category === this.category()) &&
+        (!this.statusFilter() || i.status === this.statusFilter()) &&
         (!q ||
-          `${i.title} ${i.theme} ${formatScripture(i.primaryScripture)}`
-            .toLowerCase()
+          `${i.title} ${i.theme || ""} ${i.scriptureLabel || ""} ${i.categoryLabel}`
+            .toLocaleLowerCase()
             .includes(q)),
     );
   });
-  title(i: PrayerSummary) {
-    return prayerTitle({
-      title: i.title || "",
-      theme: i.theme || "",
-      category: i.category || "Intercession",
-    });
-  }
-  scripture = formatScripture;
-  status(s: PrayerStatus) {
-    return s.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
-  }
-  relative(value: string) {
-    const mins = Math.max(
-      0,
-      Math.round((Date.now() - new Date(value).getTime()) / 60000),
-    );
-    return mins < 1
-      ? "Updated just now"
-      : mins < 60
-        ? `Updated ${mins}m ago`
-        : mins < 1440
-          ? `Updated ${Math.floor(mins / 60)}h ago`
-          : `Updated ${new Date(value).toLocaleDateString()}`;
+  clearFilters() {
+    this.query.set("");
+    this.category.set("");
+    this.statusFilter.set("");
   }
 }

@@ -99,16 +99,39 @@ export function toPrayerView(dto: PrayerDetailDto): PrayerRecord {
   const { revision, ...record } = dto;
   return { ...record, revisionToken: revision };
 }
-export interface PrayerSummary {
+/** The list endpoint has evolved; keep its transport shape separate from the UI. */
+export interface PrayerSummaryDto {
   id: EntityId;
-  revision: number;
-  title?: string;
-  status: PrayerStatus;
+  revision?: number | string | null;
+  version?: number | string | null;
+  versionNumber?: number | null;
+  sequence?: number | null;
+  currentVersion?: number | { number?: number | null } | null;
+  title?: string | null;
+  collectionTitle?: string | null;
+  status?: PrayerStatus | null;
+  theme?: string | null;
+  category?: PrayerCategory | null;
+  primaryScripture?: ScriptureReference | null;
+  scripture?: ScriptureReference | null;
+  pointCount?: number | null;
+  quantity?: number | null;
+  prayerPoints?: readonly PrayerPoint[] | null;
+  updatedAt?: IsoDateTime | null;
+}
+export interface PrayerSummaryView {
+  id: EntityId;
+  title: string;
   theme?: string;
   category?: PrayerCategory;
-  primaryScripture?: ScriptureReference;
-  pointCount: number;
-  updatedAt: IsoDateTime;
+  categoryLabel: string;
+  status: PrayerStatus;
+  statusLabel: string;
+  scriptureLabel?: string;
+  prayerPointCount?: number;
+  versionLabel?: string;
+  updatedAt?: Date;
+  updatedLabel: string;
 }
 export interface PrayerTimelineEvent {
   id: EntityId;
@@ -141,14 +164,25 @@ export function formatScripture(value?: ScriptureReference): string {
     ? `${value.book} ${value.chapter}${value.verses ? `:${value.verses}` : ""}`
     : "Scripture not set";
 }
+
+export const PRAYER_STATUS_LABELS: Readonly<Record<PrayerStatus, string>> = {
+  draft: "Draft",
+  generating: "Generating",
+  version_ready: "Version ready",
+  pending_approval: "Awaiting review",
+  in_review: "In review",
+  changes_requested: "Changes requested",
+  approved: "Approved",
+  rejected: "Rejected",
+  failed: "Failed",
+};
 export function prayerTitle(
   value: Pick<PrayerDraftForm, "title" | "theme" | "category">,
-  date = new Date(),
 ): string {
   const explicit = value.title.trim();
   if (explicit && explicit.toLowerCase() !== "untitled content")
     return explicit;
   if (value.theme.trim()) return `${value.theme.trim()} Prayers`;
   if (value.category) return `${value.category} Prayer Collection`;
-  return `Prayer Collection — ${date.toLocaleString("en", { month: "long", year: "numeric" })}`;
+  return "Prayer Collection";
 }
