@@ -203,9 +203,7 @@ interface AuditEntry {
         <div class="field">
           <label for="content">Approved content</label
           ><select id="content" formControlName="content">
-            <option>August: Enlarged by Grace</option>
-            <option>Youth Encounter invitation</option>
-            <option>Sunday sermon quote</option></select
+            <option value="">Select approved content</option></select
           ><small class="hint"
             >Content approval is separate from social publishing
             authorization.</small
@@ -351,53 +349,14 @@ export class SocialPage {
     "Manually Published",
   ];
   readonly state = signal<PublishingState>("Draft");
-  readonly accounts = signal<ConnectedAccount[]>([
-    {
-      platform: "Facebook",
-      identity: "Sanctuary Chapel Page",
-      tokenHealth: "Healthy",
-      permissions: ["pages_show_list", "pages_manage_posts"],
-      lastSync: "10 minutes ago",
-      capabilities: ["page post", "link preview", "scheduled publish"],
-      expires: "2026-09-04",
-      state: "Connected",
-    },
-    {
-      platform: "Instagram",
-      identity: "@sanctuarychapel",
-      tokenHealth: "Warning",
-      permissions: ["instagram_basic", "instagram_content_publish"],
-      lastSync: "1 hour ago",
-      capabilities: ["feed", "portrait", "story", "reel"],
-      expires: "2026-08-12",
-      state: "Needs reconnect",
-      providerError: "Permission review required for story publishing.",
-    },
-    {
-      platform: "TikTok",
-      identity: "Not connected",
-      tokenHealth: "Expired",
-      permissions: [],
-      lastSync: "Never",
-      capabilities: ["video", "cover", "privacy", "draft/direct modes"],
-      expires: "expired",
-      state: "Disconnected",
-    },
-  ]);
-  readonly audit = signal<AuditEntry[]>([
-    {
-      at: "2026-08-05T09:10:00Z",
-      actor: "Publisher",
-      action: "Draft created",
-      correlationId: "corr-social-001",
-    },
-  ]);
+  readonly accounts = signal<ConnectedAccount[]>([]);
+  readonly audit = signal<AuditEntry[]>([]);
   readonly form = new FormGroup({
     account: new FormControl("", {
       nonNullable: true,
       validators: [Validators.required],
     }),
-    content: new FormControl("August: Enlarged by Grace", {
+    content: new FormControl("", {
       nonNullable: true,
       validators: [Validators.required],
     }),
@@ -405,13 +364,10 @@ export class SocialPage {
       nonNullable: true,
       validators: [Validators.required],
     }),
-    caption: new FormControl(
-      "Join us this Sunday as we declare enlargement by grace. #SanctuaryAI #SundayService",
-      {
-        nonNullable: true,
-        validators: [Validators.required, Validators.maxLength(2200)],
-      },
-    ),
+    caption: new FormControl("", {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(2200)],
+    }),
     privacy: new FormControl("Public", { nonNullable: true }),
     date: new FormControl("", {
       nonNullable: true,

@@ -17,6 +17,11 @@ import {
 import type { AsyncJob, EntityId } from "../../models/domain.models";
 import { AiJobService, isTerminalJob } from "../../core/ai/ai-job.service";
 import { WorkflowService } from "./workflow.service";
+import { ApprovalService } from "../reviews/approval.service";
+import type {
+  ReviewContentType,
+  ReviewQueueItem,
+} from "../reviews/reviews.models";
 
 interface FeaturePanel {
   readonly title: string;
@@ -686,6 +691,16 @@ const DEFAULT_CONFIG: FeatureConfig = {
         >
           {{ busy() ? "Queueing…" : "✦ " + config().primaryAction }}
         </button>
+        @if (canSubmitForReview()) {
+          <button
+            class="btn"
+            type="button"
+            [disabled]="submitting()"
+            (click)="submitForReview()"
+          >
+            {{ submitting() ? "Submitting…" : "Submit for review" }}
+          </button>
+        }
         @if (currentJobId() && cancellationSupported()) {
           <button class="btn secondary" type="button" (click)="cancelJob()">
             Cancel AI job
@@ -701,6 +716,9 @@ const DEFAULT_CONFIG: FeatureConfig = {
           scheduling.
         </p>
       </div>
+      @if (submissionError()) {
+        <p class="error" role="alert">{{ submissionError() }}</p>
+      }
       <div class="status-flow">
         @for (status of config().statuses; track status) {
           <span class="badge" [class.info]="status === activeStatus()">{{
@@ -781,12 +799,17 @@ const DEFAULT_CONFIG: FeatureConfig = {
 export class WorkspacePage {
   private readonly workflows = inject(WorkflowService);
   private readonly aiJobs = inject(AiJobService);
+  private readonly approvals = inject(ApprovalService);
   private draftId?: EntityId;
   private draftRevision?: number;
+  private contentVersionId?: string;
   private activeRun?: Subscription;
   readonly kind = input("content");
   readonly activeStatus = signal("Draft");
   readonly busy = signal(false);
+  readonly submitting = signal(false);
+  readonly approval = signal<ReviewQueueItem | null>(null);
+  readonly submissionError = signal<string | null>(null);
   readonly currentJobId = signal<EntityId | undefined>(undefined);
   readonly cancellationSupported = signal(false);
   readonly records = signal<
@@ -803,6 +826,15 @@ export class WorkspacePage {
     });
   }
   readonly previewTitle = computed(() => `${this.config().title} preview`);
+  readonly canSubmitForReview = computed(
+    () =>
+      !!this.draftId &&
+      !!this.contentVersionId &&
+      !this.submitting() &&
+      !["pending", "in_review", "changes_requested", "approved"].includes(
+        this.approval()?.status ?? "",
+      ),
+  );
   controlName(label: string): string {
     return label
       .toLowerCase()
@@ -854,6 +886,7 @@ export class WorkspacePage {
         switchMap((draft) => {
           this.draftId = draft.id;
           this.draftRevision = draft.revision;
+          this.contentVersionId = draft.currentVersionId;
           return this.workflows.generate(
             this.kind(),
             this.draftId,
@@ -886,6 +919,34 @@ export class WorkspacePage {
             ...items,
           ]);
         },
+      });
+  }
+
+  submitForReview(): void {
+    const contentId = this.draftId;
+    const contentVersionId = this.contentVersionId;
+    const contentType = approvalContentType(this.kind());
+    if (!contentId || !contentVersionId || !contentType || this.submitting())
+      return;
+    this.submitting.set(true);
+    this.submissionError.set(null);
+    this.approvals
+      .submitForReview({
+        contentId,
+        contentVersionId,
+        contentType,
+        priority: "normal",
+      })
+      .pipe(finalize(() => this.submitting.set(false)))
+      .subscribe({
+        next: (approval) => {
+          this.approval.set(approval);
+          this.activeStatus.set(statusLabel(approval.status));
+        },
+        error: (error: { error?: { message?: string } }) =>
+          this.submissionError.set(
+            error.error?.message ?? "Unable to submit content for review.",
+          ),
       });
   }
 
@@ -930,4 +991,26 @@ export class WorkspacePage {
       ]),
     );
   }
+}
+
+function approvalContentType(kind: string): ReviewContentType | null {
+  return (
+    (
+      {
+        themes: "theme",
+        "prayer-points": "prayer",
+        declarations: "declaration",
+      } as const
+    )[kind as "themes" | "prayer-points" | "declarations"] ?? null
+  );
+}
+
+function statusLabel(status: ReviewQueueItem["status"]): string {
+  return status === "pending"
+    ? "Awaiting Approval"
+    : status === "in_review"
+      ? "In Review"
+      : status === "changes_requested"
+        ? "Changes Requested"
+        : status[0].toUpperCase() + status.slice(1);
 }

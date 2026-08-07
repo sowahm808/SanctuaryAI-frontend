@@ -20,6 +20,7 @@ import {
   type SermonDraftRequest,
   type SermonRecord,
 } from "./sermon.service";
+import { ApprovalService } from "../reviews/approval.service";
 
 type SermonStatus = "Draft" | "Awaiting Approval" | "Approved" | "Published";
 type SermonDuration = 15 | 30 | 45 | 60 | 90;
@@ -453,10 +454,11 @@ const INITIAL_SECTIONS: readonly SermonSection[] = [
 })
 export class SermonPage implements OnInit, OnDestroy {
   private readonly sermons = inject(SermonService);
+  private readonly approvals = inject(ApprovalService);
   private readonly platform = inject(PlatformStateService);
   readonly durationTargets: readonly SermonDuration[] = [15, 30, 45, 60, 90];
   readonly metadata = new FormGroup({
-    title: new FormControl("The Authority of the Believer", {
+    title: new FormControl("Untitled sermon", {
       nonNullable: true,
       validators: [Validators.required],
     }),
@@ -537,6 +539,7 @@ export class SermonPage implements OnInit, OnDestroy {
   private history = new Map<SectionKey, string[]>();
   private sermonId?: EntityId;
   private revision?: number;
+  private contentVersionId?: string;
   readonly totalMinutes = computed(() =>
     this.sections().reduce((sum, section) => sum + section.minutes, 0),
   );
@@ -649,24 +652,39 @@ export class SermonPage implements OnInit, OnDestroy {
     this.ensureServerDraft(() => {
       if (!this.sermonId) return;
       this.isBusy.set(true);
-      this.sermons.submitForReview(this.sermonId).subscribe({
-        next: (record) => {
-          this.applyServerRecord(record);
-          this.metadata.controls.status.setValue("Awaiting Approval");
-          this.platform.notify({
-            tone: "success",
-            title: "Submitted for review",
-            message: "The sermon is now awaiting approval.",
-          });
-        },
-        error: () =>
-          this.platform.notify({
-            tone: "error",
-            title: "Submit failed",
-            message: "The sermon could not be submitted for review.",
-          }),
-        complete: () => this.isBusy.set(false),
-      });
+      if (!this.contentVersionId) {
+        this.isBusy.set(false);
+        this.platform.notify({
+          tone: "error",
+          title: "Version required",
+          message: "Save the sermon version before submitting it for review.",
+        });
+        return;
+      }
+      this.approvals
+        .submitForReview({
+          contentId: this.sermonId,
+          contentVersionId: this.contentVersionId,
+          contentType: "sermon",
+          priority: "normal",
+        })
+        .subscribe({
+          next: () => {
+            this.metadata.controls.status.setValue("Awaiting Approval");
+            this.platform.notify({
+              tone: "success",
+              title: "Submitted for review",
+              message: "The sermon is now awaiting approval.",
+            });
+          },
+          error: () =>
+            this.platform.notify({
+              tone: "error",
+              title: "Submit failed",
+              message: "The sermon could not be submitted for review.",
+            }),
+          complete: () => this.isBusy.set(false),
+        });
     });
   }
   exportSermon(format: string): void {
@@ -771,10 +789,11 @@ export class SermonPage implements OnInit, OnDestroy {
     };
   }
   private applyServerRecord(
-    record: Pick<SermonRecord, "id" | "revision">,
+    record: Pick<SermonRecord, "id" | "revision" | "currentVersionId">,
   ): void {
     this.sermonId = record.id;
     this.revision = record.revision;
+    this.contentVersionId = record.currentVersionId;
   }
   private finishLocalAiPreview(): void {
     setTimeout(

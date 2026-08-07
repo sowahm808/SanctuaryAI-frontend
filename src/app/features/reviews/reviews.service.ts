@@ -26,10 +26,23 @@ export class ReviewsService {
   ): Observable<ApiResponse<CursorPage<ReviewQueueItem>>> {
     const queryFilters = Object.fromEntries(
       Object.entries(filters).filter(
-        (entry): entry is [string, string] => typeof entry[1] === "string",
+        (entry): entry is [string, string] =>
+          typeof entry[1] === "string" && entry[1].length > 0,
       ),
     );
-    return this.api.collectionPage<ReviewQueueItem>("approvals", queryFilters);
+    return this.api
+      .collectionPage<ReviewQueueItem>("approvals", queryFilters)
+      .pipe(
+        map((response) => ({
+          ...response,
+          data: {
+            ...response.data,
+            items: Array.isArray(response.data?.items)
+              ? response.data.items
+              : [],
+          },
+        })),
+      );
   }
   getReviewById(id: string): Observable<ReviewDetail> {
     return this.api
