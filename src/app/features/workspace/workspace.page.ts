@@ -1,654 +1,127 @@
-import { TitleCasePipe } from "@angular/common";
-import { finalize, switchMap, type Subscription } from "rxjs";
+import { JsonPipe } from "@angular/common";
 import {
   Component,
+  DestroyRef,
   computed,
   effect,
   inject,
   input,
   signal,
 } from "@angular/core";
+import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import {
   FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from "@angular/forms";
+import { HttpErrorResponse } from "@angular/common/http";
+import { finalize, switchMap } from "rxjs";
+import { AiJobService } from "../../core/ai/ai-job.service";
 import type { AsyncJob, EntityId } from "../../models/domain.models";
-import { AiJobService, isTerminalJob } from "../../core/ai/ai-job.service";
-import { WorkflowService } from "./workflow.service";
 import { ApprovalService } from "../reviews/approval.service";
-import type {
-  ReviewContentType,
-  ReviewQueueItem,
-} from "../reviews/reviews.models";
+import type { ReviewQueueItem } from "../reviews/reviews.models";
+import {
+  WorkflowService,
+  type ContentGenerationResult,
+  type ContentWorkflowStatus,
+  type WorkflowDraft,
+  type WorkflowKind,
+} from "./workflow.service";
 
-interface FeaturePanel {
-  readonly title: string;
-  readonly items: readonly string[];
+export interface WorkflowFieldConfig {
+  readonly key: string;
+  readonly label: string;
+  readonly type:
+    "text" | "textarea" | "number" | "date" | "select" | "multiselect";
+  readonly required: boolean;
+  readonly options?: readonly string[];
 }
-interface FeatureConfig {
-  readonly eyebrow: string;
+interface WorkflowPageConfig {
   readonly title: string;
   readonly description: string;
   readonly primaryAction: string;
-  readonly fields: readonly string[];
-  readonly panels: readonly FeaturePanel[];
-  readonly statuses: readonly string[];
+  readonly fields: readonly WorkflowFieldConfig[];
 }
-
-const FEATURE_CONFIGS: Readonly<Record<string, FeatureConfig>> = {
+const CONFIG: Readonly<Record<WorkflowKind, WorkflowPageConfig>> = {
   themes: {
-    eyebrow: "Theme generator",
     title: "Theme generation workspace",
     description:
-      "Capture pastoral direction, generate alternatives asynchronously, compare versions, and submit scripture-centered themes for approval.",
+      "Create a revision, generate alternatives, edit, and submit the exact version for review.",
     primaryAction: "Generate theme",
     fields: [
-      "Month and year",
-      "Topic",
-      "Main scripture",
-      "Supporting scriptures",
-      "Spiritual emphasis",
-      "Pastor notes",
-      "Previous theme",
-      "Upcoming events",
-      "Tone",
-      "Intended audience",
-    ],
-    statuses: [
-      "Draft",
-      "Generating",
-      "Version ready",
-      "Awaiting Approval",
-      "Approved",
-    ],
-    panels: [
-      {
-        title: "Generated output",
-        items: [
-          "Theme title and subtitle",
-          "Pastoral introduction",
-          "Objectives",
-          "Weekly teaching direction",
-          "Monthly confession",
-          "Prophetic declaration",
-          "Hashtags",
-          "Flyer headline",
-          "Design concept",
-        ],
-      },
-      {
-        title: "AI refinement actions",
-        items: [
-          "Make more prophetic",
-          "Make more pastoral",
-          "Simplify",
-          "Add scriptures",
-          "Shorten",
-          "Expand",
-          "Create alternatives",
-          "Save as template",
-        ],
-      },
+      field("monthAndYear", "Month and year"),
+      field("topic", "Topic"),
+      field("mainScripture", "Main scripture"),
+      field("supportingScriptures", "Supporting scriptures", "textarea"),
+      field("spiritualEmphasis", "Spiritual emphasis", "textarea"),
+      field("pastorNotes", "Pastor notes", "textarea", false),
     ],
   },
   "prayer-points": {
-    eyebrow: "Prayer module",
     title: "Prayer collection builder",
     description:
-      "Generate, edit, reorder, and preview prayer collections with scripture, declarations, and congregational responses.",
+      "Create scripture-grounded prayer collections and submit a generated version for review.",
     primaryAction: "Generate prayer points",
     fields: [
-      "Quantity",
-      "Theme",
-      "Scripture",
-      "Prayer category",
-      "Tone",
-      "Congregational response",
-      "Include scripture text",
-      "Include declaration",
-    ],
-    statuses: [
-      "Draft",
-      "Reordering",
-      "Card preview",
-      "Awaiting Approval",
-      "Approved",
-    ],
-    panels: [
-      {
-        title: "Prayer categories",
-        items: [
-          "Thanksgiving",
-          "Repentance",
-          "Protection",
-          "Healing",
-          "Deliverance",
-          "Family",
-          "Marriage",
-          "Children",
-          "Career",
-          "Business",
-          "Finance",
-          "Ministry",
-          "Evangelism",
-          "Revival",
-          "Spiritual warfare",
-          "National prayer",
-          "Direction",
-          "Enlargement",
-          "Divine supply",
-        ],
-      },
-      {
-        title: "Each prayer point",
-        items: [
-          "Sequence",
-          "Title",
-          "Prayer text",
-          "Scripture reference",
-          "Scripture quotation",
-          "Prophetic response",
-          "Congregational response",
-        ],
-      },
+      field("quantity", "Quantity", "number"),
+      field("theme", "Theme"),
+      field("scripture", "Scripture"),
+      field("prayerCategory", "Prayer category"),
+      field("tone", "Tone"),
     ],
   },
   declarations: {
-    eyebrow: "Declaration module",
     title: "Prophetic declaration studio",
     description:
-      "Prepare first-person, congregational, flyer, social, and video voice-over declaration versions for ministry use.",
+      "Create, revise, generate, and govern declaration versions without overwriting approvals.",
     primaryAction: "Generate declaration",
     fields: [
-      "Declaration type",
-      "Scripture foundation",
-      "Tone",
-      "Audience",
-      "Service context",
-      "Monthly campaign",
-    ],
-    statuses: ["Draft", "Version ready", "Awaiting Approval", "Approved"],
-    panels: [
-      {
-        title: "Declaration types",
-        items: [
-          "Daily",
-          "Weekly",
-          "Monthly",
-          "Service-opening",
-          "Communion",
-          "Offering",
-          "Family",
-          "Business",
-          "Healing",
-          "New-month",
-        ],
-      },
-      {
-        title: "Required versions",
-        items: [
-          "Title",
-          "Scripture foundation",
-          "First-person declaration",
-          "Congregational version",
-          "Short social version",
-          "Flyer version",
-          "Video voice-over version",
-        ],
-      },
-    ],
-  },
-  videos: {
-    eyebrow: "Video studio",
-    title: "Short-form video workflow",
-    description:
-      "Compose vertical ministry videos with scenes, overlays, captions, audio, voice-over, timing, transitions, preview, and backend render status.",
-    primaryAction: "Create video project",
-    fields: [
-      "Video type",
-      "Duration",
-      "Campaign",
-      "Scene brief",
-      "Voice-over notes",
-      "Caption style",
-      "Background audio",
-    ],
-    statuses: [
-      "Draft",
-      "Preview ready",
-      "Rendering",
-      "Render complete",
-      "Awaiting Approval",
-    ],
-    panels: [
-      {
-        title: "Project controls",
-        items: [
-          "Vertical 9:16 canvas",
-          "Scene list",
-          "Text overlays",
-          "Image assets",
-          "Background audio",
-          "Voice-over",
-          "Captions",
-          "Timing controls",
-          "Transitions",
-        ],
-      },
-      {
-        title: "Video types",
-        items: [
-          "Animated flyer",
-          "Scripture video",
-          "Prayer video",
-          "Sermon quote",
-          "Event invitation",
-          "Countdown",
-          "Prophetic declaration",
-          "Sermon recap",
-        ],
-      },
-    ],
-  },
-  calendar: {
-    eyebrow: "Content calendar",
-    title: "Ministry publishing calendar",
-    description:
-      "Plan month, week, day, and agenda views with campaign grouping, drag-and-drop rescheduling, owner filters, approval state, and publishing state.",
-    primaryAction: "Schedule content",
-    fields: [
-      "View",
-      "Campaign",
-      "Ministry",
-      "Platform",
-      "Owner",
-      "Approval state",
-      "Publishing state",
-    ],
-    statuses: [
-      "Draft",
-      "Awaiting Approval",
-      "Approved",
-      "Scheduled",
-      "Published",
-      "Failed",
-    ],
-    panels: [
-      { title: "Calendar views", items: ["Month", "Week", "Day", "Agenda"] },
-      {
-        title: "Indicators",
-        items: [
-          "Facebook",
-          "Instagram",
-          "TikTok",
-          "Campaign",
-          "Ministry",
-          "Assigned owner",
-          "Approval",
-          "Publishing",
-        ],
-      },
-    ],
-  },
-  media: {
-    eyebrow: "Media library",
-    title: "Searchable ministry asset library",
-    description:
-      "Manage logos, photos, backgrounds, generated assets, documents, audio, and video with tags, folders, upload progress, and usage references.",
-    primaryAction: "Upload assets",
-    fields: [
-      "Search",
-      "Folder",
-      "Tags",
-      "File type",
-      "Usage reference",
-      "Archive status",
-    ],
-    statuses: ["Ready", "Uploading", "Processing", "Archived"],
-    panels: [
-      {
-        title: "Asset types",
-        items: [
-          "Logos",
-          "Pastor photos",
-          "Guest photos",
-          "Backgrounds",
-          "Flyer designs",
-          "Videos",
-          "Audio",
-          "Documents",
-          "Generated assets",
-        ],
-      },
-      {
-        title: "Operations",
-        items: [
-          "Grid/list view",
-          "Bulk upload",
-          "Rename",
-          "Delete",
-          "Archive",
-          "Image dimensions",
-          "File size",
-          "Upload progress",
-        ],
-      },
-    ],
-  },
-  analytics: {
-    eyebrow: "Analytics",
-    title: "Ministry content analytics",
-    description:
-      "Review generation, approval, publishing, engagement, reach, follower growth, AI usage, and top-performing campaigns with loading, empty, and error states.",
-    primaryAction: "Refresh analytics",
-    fields: ["Date range", "Platform", "Campaign", "Metric group"],
-    statuses: ["Loading", "Current", "Empty", "Error"],
-    panels: [
-      {
-        title: "Metrics",
-        items: [
-          "Content generated",
-          "Content approved",
-          "Posts published",
-          "Failures",
-          "Reach",
-          "Views",
-          "Likes",
-          "Comments",
-          "Shares",
-          "Saves",
-          "Clicks",
-          "Follower growth",
-          "AI usage",
-        ],
-      },
-      {
-        title: "Top content",
-        items: ["Top campaigns", "Top sermons", "Top posts"],
-      },
-    ],
-  },
-  team: {
-    eyebrow: "Team management",
-    title: "Team, roles, and permissions",
-    description:
-      "Invite ministry teammates, assign roles, grant granular permissions, and review membership status without relying on roles alone.",
-    primaryAction: "Invite teammate",
-    fields: ["Name", "Email", "Role", "Permissions", "Invitation message"],
-    statuses: ["Invited", "Active", "Suspended"],
-    panels: [
-      {
-        title: "Roles",
-        items: [
-          "ChurchAdministrator",
-          "SeniorPastor",
-          "AssociatePastor",
-          "ContentWriter",
-          "MediaTeam",
-          "Reviewer",
-          "Publisher",
-          "Viewer",
-        ],
-      },
-      {
-        title: "Permissions",
-        items: [
-          "themes.create",
-          "themes.approve",
-          "sermons.publish",
-          "flyers.edit",
-          "social.schedule",
-          "social.publish",
-          "users.manage",
-          "settings.manage",
-        ],
-      },
-    ],
-  },
-
-  "social-accounts": {
-    eyebrow: "Social connections",
-    title: "Connected social accounts",
-    description:
-      "Inspect Facebook Pages, Instagram Professional Accounts, and TikTok account capabilities without exposing OAuth tokens in the browser.",
-    primaryAction: "Connect account",
-    fields: [
-      "Platform",
-      "Account identifier",
-      "Permission scope",
-      "Reconnect reason",
-    ],
-    statuses: ["Connected", "Expiring", "Needs Reconnect", "Disconnected"],
-    panels: [
-      {
-        title: "Connection details",
-        items: [
-          "Connected account",
-          "Account identifier",
-          "Token status",
-          "Permissions",
-          "Last synchronization",
-          "Publishing capabilities",
-          "Expiration warning",
-        ],
-      },
-      {
-        title: "Actions",
-        items: [
-          "Reconnect",
-          "Disconnect",
-          "Refresh capabilities",
-          "Open publisher",
-        ],
-      },
-    ],
-  },
-  notifications: {
-    eyebrow: "Notifications",
-    title: "Ministry notification center",
-    description:
-      "Monitor review requests, approval decisions, publishing failures, mentions, assignments, and expiring social connections.",
-    primaryAction: "Mark reviewed",
-    fields: ["Notification type", "Priority", "Owner", "Status"],
-    statuses: ["Unread", "Read", "Action Required", "Archived"],
-    panels: [
-      {
-        title: "Notification types",
-        items: [
-          "Review request",
-          "Approval decision",
-          "Publishing failure",
-          "Mention",
-          "Assignment",
-          "Token expiration",
-          "Subscription alert",
-        ],
-      },
-    ],
-  },
-  subscription: {
-    eyebrow: "Subscription",
-    title: "Plan and billing readiness",
-    description:
-      "Show plan status, renewal timing, usage limits, grace states, and upgrade paths while keeping payment flows delegated to secure backend checkout.",
-    primaryAction: "Review plan",
-    fields: ["Plan", "Status", "Renewal date", "Usage period"],
-    statuses: ["Trial", "Active", "Grace", "Past Due", "Cancelled"],
-    panels: [
-      {
-        title: "Usage",
-        items: [
-          "AI generations",
-          "Team seats",
-          "Storage",
-          "Scheduled posts",
-          "Connected accounts",
-        ],
-      },
-    ],
-  },
-  "audit-logs": {
-    eyebrow: "Audit logs",
-    title: "Workspace audit history",
-    description:
-      "Trace content, approval, publishing, account, and settings events with correlation IDs for support and compliance reviews.",
-    primaryAction: "Filter audit log",
-    fields: ["Actor", "Action", "Entity", "Date range", "Correlation ID"],
-    statuses: ["Loaded", "Filtered", "Exporting", "Error"],
-    panels: [
-      {
-        title: "Tracked events",
-        items: [
-          "Generated",
-          "Edited",
-          "Submitted",
-          "Approved",
-          "Rejected",
-          "Scheduled",
-          "Published",
-          "Failed",
-          "Settings changed",
-          "User invited",
-        ],
-      },
-    ],
-  },
-  settings: {
-    eyebrow: "Church settings",
-    title: "Church profile and brand settings",
-    description:
-      "Maintain identity, service times, doctrinal guidelines, ministry tone, default footer, hashtags, and connected social profile references.",
-    primaryAction: "Save settings",
-    fields: [
-      "Church name",
-      "Slogan",
-      "Description",
-      "Senior pastor",
-      "Logos",
-      "Brand colors",
-      "Fonts",
-      "Address",
-      "Service days",
-      "Service times",
-      "Bible translation",
-      "Statement of faith",
-      "Prohibited content",
-    ],
-    statuses: ["Draft", "Validated", "Saved"],
-    panels: [
-      {
-        title: "Identity",
-        items: [
-          "Logo",
-          "Secondary logo",
-          "Colors",
-          "Fonts",
-          "Digital address",
-          "Website",
-          "Facebook",
-          "Instagram",
-          "TikTok",
-          "YouTube",
-        ],
-      },
-      {
-        title: "Ministry guardrails",
-        items: [
-          "Preferred Bible translation",
-          "Ministry tone",
-          "Statement of faith",
-          "Doctrinal guidelines",
-          "Prohibited content",
-          "Standard hashtags",
-        ],
-      },
+      field("declarationType", "Declaration type"),
+      field("scriptureFoundation", "Scripture foundation"),
+      field("tone", "Tone"),
+      field("audience", "Audience"),
+      field("serviceContext", "Service context", "textarea"),
     ],
   },
 };
-
-const DEFAULT_CONFIG: FeatureConfig = {
-  eyebrow: "Ministry workspace",
-  title: "Content operations workspace",
-  description:
-    "Create, review, approve, schedule, and monitor ministry content with resilient drafts and clear workflow states.",
-  primaryAction: "Create content",
-  fields: [
-    "Title",
-    "Campaign",
-    "Owner",
-    "Due date",
-    "Approval status",
-    "Publishing status",
-  ],
-  statuses: [
-    "Draft",
-    "Awaiting Approval",
-    "Approved",
-    "Scheduled",
-    "Published",
-  ],
-  panels: [
-    {
-      title: "Workflow",
-      items: [
-        "Draft",
-        "Review",
-        "Approval",
-        "Scheduling",
-        "Publishing",
-        "Audit history",
-      ],
-    },
-  ],
+const STATUS_LABELS: Readonly<Record<ContentWorkflowStatus, string>> = {
+  draft: "Draft",
+  generating: "Generating",
+  version_ready: "Version ready",
+  pending_approval: "Awaiting approval",
+  in_review: "In review",
+  changes_requested: "Changes requested",
+  approved: "Approved",
+  rejected: "Rejected",
+  scheduled: "Scheduled",
+  published: "Published",
+  failed: "Failed",
 };
 
 @Component({
   standalone: true,
-  imports: [ReactiveFormsModule, TitleCasePipe],
+  imports: [ReactiveFormsModule, JsonPipe],
   styles: [
     `
       .head,
-      .toolbar,
+      .actions,
       .record {
         display: flex;
         justify-content: space-between;
         gap: 1rem;
         align-items: center;
       }
-      .head {
-        align-items: end;
-      }
       .layout {
-        grid-template-columns: minmax(280px, 380px) 1fr;
-      }
-      .panels {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: minmax(300px, 400px) 1fr;
       }
       .form {
         display: grid;
         gap: 0.9rem;
       }
-      .chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-      }
       .record {
         padding: 0.85rem 0;
         border-bottom: 1px solid var(--line);
-      }
-      .record:last-child {
-        border-bottom: 0;
-      }
-      .status-flow {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-      }
-      .status-flow span {
-        position: relative;
       }
       .preview {
         min-height: 170px;
@@ -658,13 +131,13 @@ const DEFAULT_CONFIG: FeatureConfig = {
         background: #fbfaff;
       }
       .actions {
-        display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
+      }
+      .error {
+        color: #8b1a1a;
       }
       @media (max-width: 900px) {
-        .layout,
-        .panels {
+        .layout {
           grid-template-columns: 1fr;
         }
         .head {
@@ -676,121 +149,118 @@ const DEFAULT_CONFIG: FeatureConfig = {
   ],
   template: ` <header class="head">
       <div>
-        <p class="eyebrow">{{ config().eyebrow }}</p>
+        <p class="eyebrow">Content workflow</p>
         <h1>{{ config().title }}</h1>
         <p class="muted">{{ config().description }}</p>
       </div>
       <div class="actions">
-        <button class="btn secondary" type="button" (click)="saveDraft()">
-          Save draft</button
-        ><button
+        <button
+          class="btn secondary"
+          type="button"
+          [disabled]="saving()"
+          (click)="saveDraft()"
+        >
+          {{ saving() ? "Saving…" : "Save draft" }}
+        </button>
+        <button
           class="btn"
           type="button"
-          [disabled]="busy()"
-          (click)="runPrimary()"
+          [disabled]="generating() || saving()"
+          (click)="generate()"
         >
-          {{ busy() ? "Queueing…" : "✦ " + config().primaryAction }}
+          {{ generating() ? "Generating…" : "✦ " + config().primaryAction }}
         </button>
         @if (canSubmitForReview()) {
           <button
             class="btn"
             type="button"
-            [disabled]="submitting()"
+            [disabled]="submittingForReview()"
             (click)="submitForReview()"
           >
-            {{ submitting() ? "Submitting…" : "Submit for review" }}
+            {{ submittingForReview() ? "Submitting…" : "Submit for review" }}
           </button>
         }
-        @if (currentJobId() && cancellationSupported()) {
-          <button class="btn secondary" type="button" (click)="cancelJob()">
+        @if (currentJob()?.cancellationSupported) {
+          <button
+            class="btn secondary"
+            type="button"
+            [disabled]="cancelling()"
+            (click)="cancelJob()"
+          >
             Cancel AI job
           </button>
         }
       </div>
     </header>
-    <section class="toolbar card" aria-label="Workflow status">
-      <div>
-        <b>Workflow</b>
-        <p class="muted">
-          Async work is tracked explicitly; approved items can be locked before
-          scheduling.
-        </p>
-      </div>
-      @if (submissionError()) {
-        <p class="error" role="alert">{{ submissionError() }}</p>
+    <section class="card">
+      <b>Status: {{ statusLabel() }}</b>
+      @if (currentJob(); as job) {
+        <p class="muted">Job {{ job.status }} · {{ job.progress }}%</p>
       }
-      <div class="status-flow">
-        @for (status of config().statuses; track status) {
-          <span class="badge" [class.info]="status === activeStatus()">{{
-            status
-          }}</span>
-        }
-      </div>
+      @if (workflowError()) {
+        <p class="error" role="alert">{{ workflowError() }}</p>
+      }
     </section>
     <div class="grid layout">
-      <form class="card form" [formGroup]="form" aria-label="Workspace brief">
+      <form class="card form" [formGroup]="form" aria-label="Content brief">
         <h2>Brief</h2>
-        @for (field of config().fields; track field) {
+        @for (field of config().fields; track field.key) {
           <div class="field">
-            <label [for]="controlId(field)">{{ field }}</label
-            ><input
-              [id]="controlId(field)"
-              [formControlName]="controlName(field)"
-              [placeholder]="field"
-            /><small class="error" aria-live="polite">
-              @if (
-                form.controls[controlName(field)].invalid &&
-                form.controls[controlName(field)].touched
-              ) {
-                {{ field }} is required.
-              }
-            </small>
+            <label [for]="field.key">{{ field.label }}</label>
+            @if (field.type === "textarea") {
+              <textarea
+                [id]="field.key"
+                [formControlName]="field.key"
+              ></textarea>
+            } @else {
+              <input
+                [id]="field.key"
+                [type]="field.type"
+                [formControlName]="field.key"
+              />
+            }
+            @if (
+              form.controls[field.key].invalid &&
+              form.controls[field.key].touched
+            ) {
+              <small class="error">{{ field.label }} is required.</small>
+            }
           </div>
         }
       </form>
       <section class="grid">
         <article class="card">
-          <h2>{{ busy() ? "Active work queue" : "Recent work" }}</h2>
-          @for (record of records(); track record.title) {
-            <div class="record">
-              <span
-                ><b>{{ record.title }}</b
-                ><br /><small class="muted"
-                  >{{ record.owner }} · {{ record.updated }}</small
-                ></span
-              ><span class="badge warning">{{ record.status }}</span>
-            </div>
-          } @empty {
-            <div class="empty">
-              <h3>No {{ config().title | titlecase }} yet</h3>
-              <p>
-                Use the brief to create the first item. Draft recovery keeps
-                interrupted work safe.
-              </p>
-            </div>
+          <h2>Recent work</h2>
+          @if (loading()) {
+            <p>Loading…</p>
+          } @else {
+            @for (record of records(); track record.id) {
+              <button type="button" class="record" (click)="select(record)">
+                <span
+                  ><b>{{ record.title || "Untitled content" }}</b
+                  ><br /><small class="muted"
+                    >Revision {{ record.revision }} ·
+                    {{ record.updatedAt || "Update time unavailable" }}</small
+                  ></span
+                ><span class="badge">{{ label(record.status) }}</span>
+              </button>
+            } @empty {
+              <div class="empty">No saved content yet.</div>
+            }
           }
         </article>
-        <div class="grid panels">
-          @for (panel of config().panels; track panel.title) {
-            <article class="card">
-              <h2>{{ panel.title }}</h2>
-              <div class="chips">
-                @for (item of panel.items; track item) {
-                  <span class="badge secondary">{{ item }}</span>
-                }
-              </div>
-            </article>
-          }
-        </div>
         <article class="card">
-          <h2>Preview and review</h2>
+          <h2>Generated preview</h2>
           <div class="preview">
-            <b>{{ previewTitle() }}</b>
-            <p class="muted">
-              Version history, reviewer comments, approval controls, audit
-              history, empty/error states, and mobile-friendly cards are part of
-              this workspace pattern.
-            </p>
+            @if (loadingPreview()) {
+              Loading generated content…
+            } @else if (currentDraft()?.generatedContent; as content) {
+              <pre>{{ content | json }}</pre>
+            } @else {
+              <p class="muted">
+                Generate a version to preview server-persisted content.
+              </p>
+            }
           </div>
         </article>
       </section>
@@ -798,219 +268,204 @@ const DEFAULT_CONFIG: FeatureConfig = {
 })
 export class WorkspacePage {
   private readonly workflows = inject(WorkflowService);
-  private readonly aiJobs = inject(AiJobService);
+  private readonly jobs = inject(AiJobService);
   private readonly approvals = inject(ApprovalService);
-  private draftId?: EntityId;
-  private draftRevision?: number;
-  private contentVersionId?: string;
-  private activeRun?: Subscription;
-  readonly kind = input("content");
-  readonly activeStatus = signal("Draft");
-  readonly busy = signal(false);
-  readonly submitting = signal(false);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly kind = input.required<WorkflowKind>();
+  form = new FormGroup<Record<string, FormControl<string>>>({});
+  readonly records = signal<readonly WorkflowDraft[]>([]);
+  readonly currentDraft = signal<WorkflowDraft | null>(null);
+  readonly currentJob = signal<AsyncJob<ContentGenerationResult> | null>(null);
   readonly approval = signal<ReviewQueueItem | null>(null);
-  readonly submissionError = signal<string | null>(null);
-  readonly currentJobId = signal<EntityId | undefined>(undefined);
-  readonly cancellationSupported = signal(false);
-  readonly records = signal<
-    readonly { title: string; owner: string; updated: string; status: string }[]
-  >([]);
-  readonly config = computed(
-    () => FEATURE_CONFIGS[this.kind()] ?? DEFAULT_CONFIG,
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly generating = signal(false);
+  readonly cancelling = signal(false);
+  readonly submittingForReview = signal(false);
+  readonly loadingPreview = signal(false);
+  readonly workflowError = signal<string | null>(null);
+  readonly config = computed(() => CONFIG[this.kind()]);
+  readonly statusLabel = computed(() =>
+    this.label(this.currentDraft()?.status ?? "draft"),
   );
-  readonly form = new FormGroup<Record<string, FormControl<string>>>({});
-  constructor() {
-    effect(() => {
-      this.config();
-      this.rebuildForm();
-    });
-  }
-  readonly previewTitle = computed(() => `${this.config().title} preview`);
   readonly canSubmitForReview = computed(
     () =>
-      !!this.draftId &&
-      !!this.contentVersionId &&
-      !this.submitting() &&
-      !["pending", "in_review", "changes_requested", "approved"].includes(
-        this.approval()?.status ?? "",
-      ),
+      this.currentDraft()?.status === "version_ready" &&
+      !this.submittingForReview(),
   );
-  controlName(label: string): string {
-    return label
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_|_$/g, "");
+
+  constructor() {
+    effect(() => {
+      this.kind();
+      this.rebuildForm();
+      this.loadRecent();
+    });
   }
-  controlId(label: string): string {
-    return `field-${this.kind()}-${this.controlName(label)}`;
-  }
-  rebuildForm(): void {
-    for (const field of this.config().fields) {
-      const name = this.controlName(field);
-      if (!this.form.controls[name])
-        this.form.addControl(
-          name,
-          new FormControl("", {
-            nonNullable: true,
-            validators: field.includes("Optional") ? [] : [Validators.required],
-          }),
-        );
-    }
+  label(status: ContentWorkflowStatus): string {
+    return STATUS_LABELS[status];
   }
   saveDraft(): void {
-    this.rebuildForm();
-    this.activeStatus.set("Draft");
-    this.records.update((items) => [
-      {
-        title: `Draft ${this.config().title}`,
-        owner: "Current user",
-        updated: "Saved locally",
-        status: "Draft",
-      },
-      ...items,
-    ]);
+    this.persist().subscribe();
   }
-  runPrimary(): void {
-    this.rebuildForm();
+  generate(): void {
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
-
-    const title =
-      this.form.controls[this.controlName(this.config().fields[0])]?.value ||
-      this.config().title;
-
-    this.busy.set(true);
-    this.activeRun = this.workflows
-      .createDraft(this.kind(), this.brief())
+    if (this.form.invalid || this.generating()) return;
+    this.generating.set(true);
+    this.workflowError.set(null);
+    this.persist()
       .pipe(
-        switchMap((draft) => {
-          this.draftId = draft.id;
-          this.draftRevision = draft.revision;
-          this.contentVersionId = draft.currentVersionId;
-          return this.workflows.generate(
-            this.kind(),
-            this.draftId,
-            this.draftRevision,
-          );
-        }),
+        switchMap((draft) =>
+          this.workflows.generate(this.kind(), draft.id, draft.revision),
+        ),
         switchMap((job) => {
-          this.currentJobId.set(job.id);
-          this.cancellationSupported.set(job.cancellationSupported === true);
-          return this.aiJobs.watch(job);
+          this.currentJob.set(job);
+          return this.jobs.watch(job);
         }),
-        finalize(() => {
-          this.busy.set(false);
-          this.currentJobId.set(undefined);
-          this.cancellationSupported.set(false);
-          this.activeRun = undefined;
-        }),
+        finalize(() => this.generating.set(false)),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (job) => this.applyJob(job, title),
-        error: () => {
-          this.activeStatus.set("Draft");
-          this.records.update((items) => [
-            {
-              title,
-              owner: "Backend API",
-              updated: "Request failed",
-              status: "Failed",
-            },
-            ...items,
-          ]);
+        next: (job) => {
+          this.currentJob.set(job);
+          if (job.status === "completed") this.loadGenerated(job.result);
+          else if (job.status === "failed" || job.status === "cancelled")
+            this.patchStatus(job.status === "failed" ? "failed" : "draft");
         },
+        error: (error) => this.workflowError.set(message(error)),
       });
   }
-
   submitForReview(): void {
-    const contentId = this.draftId;
-    const contentVersionId = this.contentVersionId;
-    const contentType = approvalContentType(this.kind());
-    if (!contentId || !contentVersionId || !contentType || this.submitting())
-      return;
-    this.submitting.set(true);
-    this.submissionError.set(null);
+    const draft = this.currentDraft();
+    if (!draft || !this.canSubmitForReview()) return;
+    this.submittingForReview.set(true);
+    this.workflowError.set(null);
     this.approvals
-      .submitForReview({
-        contentId,
-        contentVersionId,
-        contentType,
-        priority: "normal",
-      })
-      .pipe(finalize(() => this.submitting.set(false)))
+      .submitContent(this.kind(), draft.id)
+      .pipe(
+        finalize(() => this.submittingForReview.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe({
         next: (approval) => {
           this.approval.set(approval);
-          this.activeStatus.set(statusLabel(approval.status));
+          this.patchStatus(
+            approval.status === "in_review" ? "in_review" : "pending_approval",
+          );
+          this.loadRecent();
         },
-        error: (error: { error?: { message?: string } }) =>
-          this.submissionError.set(
-            error.error?.message ?? "Unable to submit content for review.",
-          ),
+        error: (error) => this.workflowError.set(message(error)),
       });
   }
-
   cancelJob(): void {
-    const id = this.currentJobId();
-    if (!id) return;
-    this.aiJobs.cancel(id).subscribe({
-      next: (job) => {
-        this.applyJob(job);
-        if (isTerminalJob(job)) this.activeRun?.unsubscribe();
-      },
-      error: () => this.activeStatus.set("Cancellation failed"),
-    });
+    const job = this.currentJob();
+    if (!job || this.cancelling()) return;
+    this.cancelling.set(true);
+    this.jobs
+      .cancel(job.id)
+      .pipe(
+        finalize(() => this.cancelling.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (value) => this.currentJob.set({ ...value, result: undefined }),
+        error: (error) => this.workflowError.set(message(error)),
+      });
   }
-
-  private applyJob(job: AsyncJob, title = this.config().title): void {
-    const status =
-      job.status === "completed"
-        ? (this.config().statuses[2] ?? "Complete")
-        : job.status === "failed" || job.status === "cancelled"
-          ? job.status[0].toUpperCase() + job.status.slice(1)
-          : (this.config().statuses[1] ?? "Running");
-    this.activeStatus.set(status);
-    this.cancellationSupported.set(
-      !isTerminalJob(job) && job.cancellationSupported === true,
-    );
-    this.records.set([
-      {
-        title,
-        owner: "Backend AI workflow",
-        updated: job.message ?? `${job.status} · ${job.progress}%`,
-        status,
-      },
-    ]);
+  select(draft: WorkflowDraft): void {
+    this.currentDraft.set(draft);
+    this.form.patchValue(draft.brief ?? {});
+    if (draft.generatedContent === undefined)
+      this.loadGenerated({
+        contentId: draft.id,
+        contentVersionId: draft.currentVersionId,
+        revision: draft.revision,
+      });
   }
-
-  private brief(): Record<string, string> {
-    return Object.fromEntries(
-      this.config().fields.map((field) => [
-        this.controlName(field),
-        this.form.controls[this.controlName(field)]?.value ?? "",
-      ]),
+  private persist() {
+    this.form.markAllAsTouched();
+    const existing = this.currentDraft();
+    const request = existing
+      ? this.workflows.saveDraft(
+          this.kind(),
+          existing.id,
+          this.form.getRawValue(),
+          existing.revision,
+        )
+      : this.workflows.createDraft(this.kind(), this.form.getRawValue());
+    this.saving.set(true);
+    this.workflowError.set(null);
+    return request.pipe(
+      finalize(() => this.saving.set(false)),
+      takeUntilDestroyed(this.destroyRef),
+      switchMap((draft) => {
+        this.currentDraft.set(draft);
+        this.loadRecent();
+        return [draft];
+      }),
     );
+  }
+  private loadRecent(): void {
+    this.loading.set(true);
+    this.workflows
+      .list(this.kind())
+      .pipe(
+        finalize(() => this.loading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (page) => this.records.set(page.items),
+        error: (error) => this.workflowError.set(message(error)),
+      });
+  }
+  private loadGenerated(result?: ContentGenerationResult): void {
+    const id = result?.contentId ?? this.currentDraft()?.id;
+    if (!id) {
+      this.workflowError.set("Generation completed without a content result.");
+      return;
+    }
+    this.loadingPreview.set(true);
+    this.workflows
+      .get(this.kind(), id)
+      .pipe(
+        finalize(() => this.loadingPreview.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (draft) => {
+          this.currentDraft.set(draft);
+          this.loadRecent();
+        },
+        error: (error) => this.workflowError.set(message(error)),
+      });
+  }
+  private patchStatus(status: ContentWorkflowStatus): void {
+    const draft = this.currentDraft();
+    if (draft) this.currentDraft.set({ ...draft, status });
+  }
+  private rebuildForm(): void {
+    const controls: Record<string, FormControl<string>> = {};
+    for (const item of this.config().fields)
+      controls[item.key] = new FormControl("", {
+        nonNullable: true,
+        validators: item.required ? [Validators.required] : [],
+      });
+    this.form = new FormGroup(controls);
   }
 }
-
-function approvalContentType(kind: string): ReviewContentType | null {
-  return (
-    (
-      {
-        themes: "theme",
-        "prayer-points": "prayer",
-        declarations: "declaration",
-      } as const
-    )[kind as "themes" | "prayer-points" | "declarations"] ?? null
-  );
+function field(
+  key: string,
+  label: string,
+  type: WorkflowFieldConfig["type"] = "text",
+  required = true,
+): WorkflowFieldConfig {
+  return { key, label, type, required };
 }
-
-function statusLabel(status: ReviewQueueItem["status"]): string {
-  return status === "pending"
-    ? "Awaiting Approval"
-    : status === "in_review"
-      ? "In Review"
-      : status === "changes_requested"
-        ? "Changes Requested"
-        : status[0].toUpperCase() + status.slice(1);
+function message(error: unknown): string {
+  if (error instanceof HttpErrorResponse) {
+    if (error.status === 409)
+      return "This content changed on the server. Reload it before saving again.";
+    const body = error.error as { message?: string } | null;
+    return body?.message ?? `The workflow request failed (${error.status}).`;
+  }
+  return "The workflow service is unavailable.";
 }

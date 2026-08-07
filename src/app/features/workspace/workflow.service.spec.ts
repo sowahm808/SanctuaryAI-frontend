@@ -18,4 +18,16 @@ describe("workflowApiConfig", () => {
     expect(config.group).toBe("prayers");
     expect(config.generateResource(entityId)).toBe("entity-1/generate");
   });
+
+  it("routes approval submission through the content resource", () => {
+    expect(
+      workflowApiConfig("declarations").submitReviewResource(entityId),
+    ).toBe("entity-1/submit-review");
+  });
+
+  it("fails explicitly instead of falling back to themes", () => {
+    expect(() => workflowApiConfig("unsupported" as never)).toThrow(
+      "Unsupported workflow kind: unsupported",
+    );
+  });
 });
