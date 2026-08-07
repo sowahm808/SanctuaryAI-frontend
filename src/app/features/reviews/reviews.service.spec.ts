@@ -40,7 +40,7 @@ const detail = {
 describe("ReviewsService", () => {
   const api = {
     list: vi.fn(),
-    collection: vi.fn(),
+    collectionPage: vi.fn(),
     get: vi.fn(),
     postResource: vi.fn(),
     patchResource: vi.fn(),
@@ -57,18 +57,28 @@ describe("ReviewsService", () => {
     );
   });
   it("loads the explicit approval queue with server filters", () => {
-    api.collection.mockReturnValue(of({ data: [detail], correlationId: "c1" }));
+    api.collectionPage.mockReturnValue(
+      of({ data: { items: [detail], total: 1 }, correlationId: "c1" }),
+    );
     service
       .getReviewQueue({ type: "theme" })
-      .subscribe((items) => expect(items[0]?.id).toBe("review_1"));
-    expect(api.collection).toHaveBeenCalledWith("approvals", { type: "theme" });
+      .subscribe((response) =>
+        expect(response.data.items[0]?.id).toBe("review_1"),
+      );
+    expect(api.collectionPage).toHaveBeenCalledWith("approvals", {
+      type: "theme",
+    });
   });
   it("omits unset approval filters", () => {
-    api.collection.mockReturnValue(of({ data: [], correlationId: "c1" }));
+    api.collectionPage.mockReturnValue(
+      of({ data: { items: [], total: 0 }, correlationId: "c1" }),
+    );
 
-    service.getReviewQueue().subscribe((items) => expect(items).toEqual([]));
+    service
+      .getReviewQueue()
+      .subscribe((response) => expect(response.data.items).toEqual([]));
 
-    expect(api.collection).toHaveBeenCalledWith("approvals", {});
+    expect(api.collectionPage).toHaveBeenCalledWith("approvals", {});
   });
   it("loads persisted review details", () => {
     api.get.mockReturnValue(of({ data: detail, correlationId: "c1" }));

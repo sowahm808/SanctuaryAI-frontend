@@ -45,11 +45,11 @@ export class ApiClientService {
       withCredentials: true,
     });
   }
-  collection<T>(
+  collectionPage<T>(
     group: ApiGroup,
     filters: Readonly<Record<string, string>> = {},
-  ): Observable<ApiResponse<readonly T[]>> {
-    return this.http.get<ApiResponse<readonly T[]>>(this.url(group), {
+  ): Observable<ApiResponse<CursorPage<T>>> {
+    return this.http.get<ApiResponse<CursorPage<T>>>(this.url(group), {
       params: scalarParams(filters),
       withCredentials: true,
     });
