@@ -63,9 +63,7 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: { permissions: ["themes.read"], kind: "themes" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
-          ),
+          import("./features/themes/theme.page").then((m) => m.ThemePage),
       },
       {
         path: "prayer-points",
