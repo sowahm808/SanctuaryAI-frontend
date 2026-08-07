@@ -84,7 +84,9 @@ export const routes: Routes = [
         canActivate: [permissionGuard],
         data: { permissions: ["flyers.edit"] },
         loadComponent: () =>
-          import("./features/flyer/flyer.page").then((m) => m.FlyerPage),
+          import("./features/flyers/pages/flyer-studio.page").then(
+            (m) => m.FlyerStudioPage,
+          ),
       },
       {
         path: "social-publisher",
