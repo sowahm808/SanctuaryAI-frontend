@@ -59,7 +59,11 @@ export function parseRuntimeConfig(value: unknown): RuntimeConfig {
 
 function validApiBaseUrl(value: unknown): value is string {
   return (
-    typeof value === "string" && value.trim() !== "" && !value.endsWith("/")
+    typeof value === "string" &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    value.trim() !== "" &&
+    !value.endsWith("/")
   );
 }
 

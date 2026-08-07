@@ -1,9 +1,11 @@
 import { Injectable, inject } from "@angular/core";
-import { map, type Observable } from "rxjs";
+import type { Observable } from "rxjs";
 import {
   ApiClientService,
+  resourcePath,
   type ApiGroup,
 } from "../../core/api/api-client.service";
+import { unwrapCursorPage, unwrapData } from "../../core/api/api-response";
 import type {
   AsyncJob,
   CursorPage,
@@ -22,7 +24,8 @@ export type ContentWorkflowStatus =
   | "rejected"
   | "scheduled"
   | "published"
-  | "failed";
+  | "failed"
+  | "cancelled";
 
 export interface WorkflowDraftRequest {
   kind: WorkflowKind;
@@ -41,7 +44,7 @@ export interface WorkflowDraft {
 }
 export interface ContentGenerationResult {
   contentId: EntityId;
-  contentVersionId: EntityId;
+  versionId: EntityId;
   revision: number;
 }
 export interface WorkflowApiConfig {
@@ -73,7 +76,7 @@ export class WorkflowService {
         kind,
         brief,
       })
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
   }
 
   saveDraft(
@@ -88,7 +91,7 @@ export class WorkflowService {
         id,
         { kind, brief, expectedRevision },
       )
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
   }
 
   generate(
@@ -103,13 +106,13 @@ export class WorkflowService {
         config.generateResource(id),
         { revision },
       )
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
   }
 
   get(kind: WorkflowKind, id: EntityId): Observable<WorkflowDraft> {
     return this.api
       .get<WorkflowDraft>(workflowApiConfig(kind).group, id)
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
   }
 
   list(kind: WorkflowKind): Observable<CursorPage<WorkflowDraft>> {
@@ -119,7 +122,7 @@ export class WorkflowService {
         sort: "updatedAt",
         direction: "desc",
       })
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapCursorPage());
   }
 }
 
@@ -132,8 +135,8 @@ export function workflowApiConfig(kind: WorkflowKind): WorkflowApiConfig {
 function contentConfig(group: ApiGroup): WorkflowApiConfig {
   return {
     group,
-    generateResource: (id) => `${id}/generate`,
-    submitReviewResource: (id) => `${id}/submit-review`,
+    generateResource: (id) => resourcePath(id, "generate"),
+    submitReviewResource: (id) => resourcePath(id, "submit-review"),
     requiresApproval: true,
   };
 }

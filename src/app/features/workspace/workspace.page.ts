@@ -97,6 +97,7 @@ const STATUS_LABELS: Readonly<Record<ContentWorkflowStatus, string>> = {
   scheduled: "Scheduled",
   published: "Published",
   failed: "Failed",
+  cancelled: "Cancelled",
 };
 
 @Component({
@@ -233,6 +234,17 @@ const STATUS_LABELS: Readonly<Record<ContentWorkflowStatus, string>> = {
           <h2>Recent work</h2>
           @if (loading()) {
             <p>Loading…</p>
+          } @else if (recordsError()) {
+            <div class="error" role="alert">
+              <p>{{ recordsError() }}</p>
+              <button
+                class="btn secondary"
+                type="button"
+                (click)="loadRecent()"
+              >
+                Retry
+              </button>
+            </div>
           } @else {
             @for (record of records(); track record.id) {
               <button type="button" class="record" (click)="select(record)">
@@ -284,6 +296,7 @@ export class WorkspacePage {
   readonly submittingForReview = signal(false);
   readonly loadingPreview = signal(false);
   readonly workflowError = signal<string | null>(null);
+  readonly recordsError = signal<string | null>(null);
   readonly config = computed(() => CONFIG[this.kind()]);
   readonly statusLabel = computed(() =>
     this.label(this.currentDraft()?.status ?? "draft"),
@@ -328,8 +341,10 @@ export class WorkspacePage {
         next: (job) => {
           this.currentJob.set(job);
           if (job.status === "completed") this.loadGenerated(job.result);
+          // Terminal content state is loaded from the backend. Operation failure
+          // must not invent a persisted draft status in the browser.
           else if (job.status === "failed" || job.status === "cancelled")
-            this.patchStatus(job.status === "failed" ? "failed" : "draft");
+            this.loadGenerated(job.result);
         },
         error: (error) => this.workflowError.set(message(error)),
       });
@@ -348,9 +363,7 @@ export class WorkspacePage {
       .subscribe({
         next: (approval) => {
           this.approval.set(approval);
-          this.patchStatus(
-            approval.status === "in_review" ? "in_review" : "pending_approval",
-          );
+          this.loadGenerated();
           this.loadRecent();
         },
         error: (error) => this.workflowError.set(message(error)),
@@ -377,7 +390,7 @@ export class WorkspacePage {
     if (draft.generatedContent === undefined)
       this.loadGenerated({
         contentId: draft.id,
-        contentVersionId: draft.currentVersionId,
+        versionId: draft.currentVersionId,
         revision: draft.revision,
       });
   }
@@ -404,8 +417,9 @@ export class WorkspacePage {
       }),
     );
   }
-  private loadRecent(): void {
+  loadRecent(): void {
     this.loading.set(true);
+    this.recordsError.set(null);
     this.workflows
       .list(this.kind())
       .pipe(
@@ -414,7 +428,7 @@ export class WorkspacePage {
       )
       .subscribe({
         next: (page) => this.records.set(page.items),
-        error: (error) => this.workflowError.set(message(error)),
+        error: (error) => this.recordsError.set(message(error)),
       });
   }
   private loadGenerated(result?: ContentGenerationResult): void {
@@ -438,11 +452,12 @@ export class WorkspacePage {
         error: (error) => this.workflowError.set(message(error)),
       });
   }
-  private patchStatus(status: ContentWorkflowStatus): void {
-    const draft = this.currentDraft();
-    if (draft) this.currentDraft.set({ ...draft, status });
-  }
   private rebuildForm(): void {
+    this.currentDraft.set(null);
+    this.currentJob.set(null);
+    this.approval.set(null);
+    this.workflowError.set(null);
+    this.recordsError.set(null);
     const controls: Record<string, FormControl<string>> = {};
     for (const item of this.config().fields)
       controls[item.key] = new FormControl("", {

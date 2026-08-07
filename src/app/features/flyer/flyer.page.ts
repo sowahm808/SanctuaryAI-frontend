@@ -580,7 +580,7 @@ export class FlyerPage implements AfterViewInit, OnDestroy {
       },
       "current",
     );
-    this.status.set("Saved locally with recovery snapshot");
+    this.status.set("Prototype recovery snapshot only — not saved to server");
   }
   export(format: "png" | "jpg" | "webp" | "pdf" | "svg" | "mp4") {
     this.exportStatus.set(

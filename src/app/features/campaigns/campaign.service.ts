@@ -1,6 +1,9 @@
 import { Injectable, inject } from "@angular/core";
 import { map, type Observable } from "rxjs";
-import { ApiClientService } from "../../core/api/api-client.service";
+import {
+  ApiClientService,
+  resourcePath,
+} from "../../core/api/api-client.service";
 import type { AsyncJob, EntityId } from "../../models/domain.models";
 
 export interface CampaignGenerationBrief {
@@ -31,7 +34,7 @@ export class CampaignService {
     return this.api
       .postResource<{ revision?: number }, AsyncJob>(
         "campaigns",
-        `${campaignId}/generate`,
+        resourcePath(campaignId, "generate"),
         { revision },
       )
       .pipe(map((response) => response.data));
@@ -45,7 +48,7 @@ export class CampaignService {
     return this.api
       .postResource<{ revision?: number }, AsyncJob>(
         "campaigns",
-        `${campaignId}/sections/${encodeURIComponent(scope)}/regenerate`,
+        resourcePath(campaignId, "sections", scope, "regenerate"),
         { revision },
       )
       .pipe(map((response) => response.data));

@@ -2,9 +2,11 @@ import { Injectable, inject } from "@angular/core";
 import { map, type Observable } from "rxjs";
 import {
   ApiClientService,
+  resourcePath,
   type ApiGroup,
 } from "../../core/api/api-client.service";
 import type { CursorPage, EntityId } from "../../models/domain.models";
+import { unwrapCursorPage, unwrapData } from "../../core/api/api-response";
 import {
   workflowApiConfig,
   type WorkflowKind,
@@ -12,6 +14,7 @@ import {
 import type {
   AddReviewCommentRequest,
   AssignReviewRequest,
+  EligibleReviewer,
   ReviewComment,
   ReviewDecisionRequest,
   ReviewDetail,
@@ -43,7 +46,7 @@ export class ApprovalService {
     return this.api
       .postResource<Record<string, never>, ReviewQueueItem>(
         contentGroup(input.contentType),
-        `${input.contentId}/submit-review`,
+        resourcePath(input.contentId, "submit-review"),
         {},
       )
       .pipe(map(({ data }) => data));
@@ -69,64 +72,65 @@ export class ApprovalService {
     );
     return this.api
       .collectionPage<ReviewQueueItem>("approvals", query)
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapCursorPage());
   }
 
-  getById(id: EntityId): Observable<ReviewDetail> {
-    return this.api
-      .get<ReviewDetail>("approvals", id)
-      .pipe(map((response) => response.data));
+  getDetail(id: string): Observable<ReviewDetail> {
+    return this.api.get<ReviewDetail>("approvals", id).pipe(unwrapData());
   }
 
   approve(
-    id: EntityId,
+    id: string,
     request: ReviewDecisionRequest,
   ): Observable<ReviewDetail> {
     return this.decision(id, "approve", request);
   }
   requestChanges(
-    id: EntityId,
+    id: string,
     request: ReviewDecisionRequest,
   ): Observable<ReviewDetail> {
     return this.decision(id, "request-changes", request);
   }
-  reject(
-    id: EntityId,
-    request: ReviewDecisionRequest,
-  ): Observable<ReviewDetail> {
+  reject(id: string, request: ReviewDecisionRequest): Observable<ReviewDetail> {
     return this.decision(id, "reject", request);
   }
-  assign(id: EntityId, assigneeId: EntityId): Observable<ReviewDetail> {
+  assign(id: string, assigneeId: string): Observable<ReviewDetail> {
     return this.api
       .patchResource<AssignReviewRequest, ReviewDetail>(
         "approvals",
-        `${id}/assignee`,
+        resourcePath(id, "assignee"),
         { assigneeId },
       )
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
   }
-  addComment(id: EntityId, body: string): Observable<ReviewComment> {
+  comment(id: string, body: string): Observable<ReviewComment> {
     return this.api
       .postResource<AddReviewCommentRequest, ReviewComment>(
         "approvals",
-        `${id}/comments`,
+        resourcePath(id, "comments"),
         { body },
       )
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
+  }
+
+  getEligibleReviewers(): Observable<CursorPage<EligibleReviewer>> {
+    return this.api
+      .list<EligibleReviewer>("users", { filters: { eligibleFor: "review" } })
+      .pipe(unwrapCursorPage());
   }
 
   private decision(
-    id: EntityId,
+    id: string,
     action: string,
     request: ReviewDecisionRequest,
   ): Observable<ReviewDetail> {
     return this.api
       .postResource<ReviewDecisionRequest, ReviewDetail>(
         "approvals",
-        `${id}/${action}`,
+        resourcePath(id, action),
         request,
       )
-      .pipe(map(({ data }) => data));
+      .pipe(unwrapData());
   }
 }
 

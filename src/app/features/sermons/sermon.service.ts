@@ -1,6 +1,9 @@
 import { Injectable, inject } from "@angular/core";
 import { map, type Observable } from "rxjs";
-import { ApiClientService } from "../../core/api/api-client.service";
+import {
+  ApiClientService,
+  resourcePath,
+} from "../../core/api/api-client.service";
 import type { EntityId, IsoDateTime } from "../../models/domain.models";
 
 export interface SermonBlock {
@@ -61,7 +64,7 @@ export class SermonService {
     return this.api
       .putResource<SermonDraftRequest, SermonRecord>(
         "sermons",
-        `${id}/draft`,
+        resourcePath(id, "draft"),
         body,
       )
       .pipe(map((response) => response.data));
@@ -71,16 +74,22 @@ export class SermonService {
     return this.api
       .getResource<SermonRecord>(
         "sermons",
-        revision === undefined ? id : `${id}?revision=${revision}`,
+        revision === undefined
+          ? resourcePath(id)
+          : `${resourcePath(id)}?revision=${encodeURIComponent(revision)}`,
       )
       .pipe(map((response) => response.data));
   }
 
   requestExport(id: EntityId, format: string): Observable<AsyncJob> {
     return this.api
-      .postResource<{ format: string }, AsyncJob>("sermons", `${id}/exports`, {
-        format,
-      })
+      .postResource<{ format: string }, AsyncJob>(
+        "sermons",
+        resourcePath(id, "exports"),
+        {
+          format,
+        },
+      )
       .pipe(map((response) => response.data));
   }
 
@@ -89,7 +98,11 @@ export class SermonService {
     body: { label: string; scope: "Section" | "Document"; sectionKey?: string },
   ): Observable<AsyncJob> {
     return this.api
-      .postResource<typeof body, AsyncJob>("sermons", `${id}/ai-jobs`, body)
+      .postResource<typeof body, AsyncJob>(
+        "sermons",
+        resourcePath(id, "ai-jobs"),
+        body,
+      )
       .pipe(map((response) => response.data));
   }
 }

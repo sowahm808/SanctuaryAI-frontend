@@ -9,7 +9,7 @@ import {
   timer,
 } from "rxjs";
 import type { AsyncJob, EntityId } from "../../models/domain.models";
-import { ApiClientService } from "../api/api-client.service";
+import { ApiClientService, resourcePath } from "../api/api-client.service";
 import { validJob } from "./ai-job.validation";
 
 const TERMINAL_STATUSES: ReadonlySet<AsyncJob["status"]> = new Set([
@@ -64,7 +64,11 @@ export class AiJobService {
 
   cancel(id: EntityId): Observable<AsyncJob> {
     return this.api
-      .postResource<Record<string, never>, AsyncJob>("jobs", `${id}/cancel`, {})
+      .postResource<Record<string, never>, AsyncJob>(
+        "jobs",
+        resourcePath(id, "cancel"),
+        {},
+      )
       .pipe(map((response) => response.data));
   }
 }
