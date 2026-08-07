@@ -35,12 +35,12 @@ import type {
   PrayerPoint,
   PrayerRecord,
   PrayerStatus,
-  PrayerSummary,
+  PrayerSummaryView,
   PrayerTimelineEvent,
   PrayerVersion,
   ScriptureReference,
 } from "./prayer.models";
-import { prayerTitle } from "./prayer.models";
+import { PRAYER_STATUS_LABELS, prayerTitle } from "./prayer.models";
 import { PrayerPreviewComponent } from "./prayer-preview.component";
 import { PrayerRecentWorkComponent } from "./prayer-recent-work.component";
 import { PrayerService } from "./prayer.service";
@@ -178,6 +178,14 @@ import { PrayerVersionHistoryComponent } from "./prayer-version-history.componen
         <button
           class="btn secondary"
           type="button"
+          [disabled]="busy()"
+          (click)="newCollection()"
+        >
+          New collection
+        </button>
+        <button
+          class="btn secondary"
+          type="button"
           [disabled]="busy() || approved()"
           (click)="saveDraft()"
         >
@@ -291,7 +299,7 @@ export class PrayerCollectionPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  readonly recent = signal<readonly PrayerSummary[]>([]);
+  readonly recent = signal<readonly PrayerSummaryView[]>([]);
   readonly record = signal<PrayerRecord | null>(null);
   readonly timeline = signal<readonly PrayerTimelineEvent[]>([]);
   readonly versions = signal<readonly PrayerVersion[]>([]);
@@ -397,8 +405,45 @@ export class PrayerCollectionPage implements OnInit {
         error: (e) => this.recentError.set(this.error(e)),
       });
   }
-  select(item: PrayerSummary) {
+  select(item: PrayerSummaryView) {
     this.load(item.id);
+  }
+  newCollection() {
+    if (this.busy()) return;
+    this.record.set(null);
+    this.serverRevision.set(null);
+    this.loadedSnapshot.set(null);
+    this.conflict.set(null);
+    this.timeline.set([]);
+    this.versions.set([]);
+    this.approval.set(null);
+    this.job.set(null);
+    this.clearMessage();
+    this.form.reset({
+      title: "",
+      quantity: 20,
+      theme: "",
+      primaryScripture: { book: "", chapter: 1, verses: "" },
+      category: "Intercession",
+      tone: "Pastoral",
+      advancedOptions: {
+        includeScriptureText: true,
+        includeDeclaration: true,
+        includeCongregationalResponse: false,
+        includeIntroduction: true,
+        includeClosingDeclaration: true,
+        bibleTranslation: "NKJV",
+        audience: "Congregation",
+        serviceContext: "",
+        campaign: "",
+      },
+    });
+    this.supportingScriptures.clear();
+    void this.router.navigate([], {
+      queryParams: { prayer: null },
+      queryParamsHandling: "merge",
+      replaceUrl: true,
+    });
   }
   load(id: EntityId) {
     this.loadingDetails.set(true);
@@ -648,7 +693,7 @@ export class PrayerCollectionPage implements OnInit {
     });
   }
   private label(status: PrayerStatus) {
-    return status.replaceAll("_", " ").replace(/^./, (c) => c.toUpperCase());
+    return PRAYER_STATUS_LABELS[status];
   }
   private clearMessage() {
     this.message.set(null);

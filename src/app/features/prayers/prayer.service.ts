@@ -13,11 +13,13 @@ import type {
   PrayerJob,
   PrayerPoint,
   PrayerRecord,
-  PrayerSummary,
+  PrayerSummaryDto,
+  PrayerSummaryView,
   PrayerTimelineEvent,
   PrayerVersion,
 } from "./prayer.models";
 import { toPrayerView } from "./prayer.models";
+import { toPrayerSummaryView } from "./prayer-summary.mapper";
 
 export const PRAYER_LIST_OPTIONS = {
   limit: 20,
@@ -32,10 +34,14 @@ export const prayerResource = (
 @Injectable({ providedIn: "root" })
 export class PrayerService {
   private readonly api = inject(ApiClientService);
-  list(): Observable<CursorPage<PrayerSummary>> {
-    return this.api
-      .list<PrayerSummary>("prayers", PRAYER_LIST_OPTIONS)
-      .pipe(unwrapCursorPage());
+  list(): Observable<CursorPage<PrayerSummaryView>> {
+    return this.api.list<PrayerSummaryDto>("prayers", PRAYER_LIST_OPTIONS).pipe(
+      unwrapCursorPage(),
+      map((page) => ({
+        ...page,
+        items: page.items.map((item) => toPrayerSummaryView(item)),
+      })),
+    );
   }
   get(id: EntityId): Observable<PrayerRecord> {
     return this.api
