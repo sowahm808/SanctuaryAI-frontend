@@ -67,10 +67,9 @@ export const routes: Routes = [
       },
       {
         path: "prayer-points",
-        data: { kind: "prayer-points" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/prayers/prayer.page").then(
+            (m) => m.PrayerCollectionPage,
           ),
       },
       {
