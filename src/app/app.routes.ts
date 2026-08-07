@@ -159,10 +159,9 @@ export const routes: Routes = [
       },
       {
         path: "audit-logs",
-        data: { kind: "audit-logs" },
         loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
+          import("./features/analytics-admin.page").then(
+            (m) => m.AnalyticsAdminPage,
           ),
       },
 
@@ -188,13 +187,6 @@ export const routes: Routes = [
         path: "reviews",
         loadComponent: () =>
           import("./features/reviews/reviews.page").then((m) => m.ReviewsPage),
-      },
-      {
-        path: "workspace/:kind",
-        loadComponent: () =>
-          import("./features/workspace/workspace.page").then(
-            (m) => m.WorkspacePage,
-          ),
       },
       { path: "", pathMatch: "full", redirectTo: "dashboard" },
     ],

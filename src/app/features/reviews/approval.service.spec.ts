@@ -9,7 +9,7 @@ import { ApiClientService } from "../../core/api/api-client.service";
 import { ApprovalService } from "./approval.service";
 
 describe("ApprovalService", () => {
-  it("submits an exact governed content version to the canonical endpoint", () => {
+  it("submits governed content through its resource submit-review endpoint", () => {
     const approval = {
       id: "approval-1",
       contentId: "theme-1",
@@ -18,7 +18,9 @@ describe("ApprovalService", () => {
       status: "pending",
     };
     const api = {
-      create: vi.fn(() => of({ data: approval, correlationId: "request-1" })),
+      postResource: vi.fn(() =>
+        of({ data: approval, correlationId: "request-1" }),
+      ),
     };
     const injector = createEnvironmentInjector([
       ApprovalService,
@@ -37,18 +39,18 @@ describe("ApprovalService", () => {
       })
       .subscribe((result) => expect(result).toBe(approval));
 
-    expect(api.create).toHaveBeenCalledWith("approvals", {
-      contentId: "theme-1",
-      contentVersionId: "theme-version-2",
-      contentType: "theme",
-      priority: "normal",
-    });
+    expect(api.postResource).toHaveBeenCalledWith(
+      "themes",
+      "theme-1/submit-review",
+      {},
+    );
   });
 
-  it("normalizes a malformed empty collection to an iterable page", () => {
+  it("unwraps the cursor page exactly once", () => {
+    const page = { items: [], nextCursor: "next" };
     const api = {
       collectionPage: vi.fn(() =>
-        of({ data: {} as never, correlationId: "request-2" }),
+        of({ data: page, correlationId: "request-2" }),
       ),
     };
     const injector = createEnvironmentInjector([
@@ -59,8 +61,6 @@ describe("ApprovalService", () => {
       injector.get(ApprovalService),
     );
 
-    service
-      .getQueue()
-      .subscribe((result) => expect(result.data.items).toEqual([]));
+    service.getQueue().subscribe((result) => expect(result).toBe(page));
   });
 });

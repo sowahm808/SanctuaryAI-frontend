@@ -4,45 +4,68 @@ import {
   ApiClientService,
   type ApiGroup,
 } from "../../core/api/api-client.service";
-import type { AsyncJob, EntityId } from "../../models/domain.models";
+import type {
+  AsyncJob,
+  CursorPage,
+  EntityId,
+} from "../../models/domain.models";
+
+export type WorkflowKind = "themes" | "prayer-points" | "declarations";
+export type ContentWorkflowStatus =
+  | "draft"
+  | "generating"
+  | "version_ready"
+  | "pending_approval"
+  | "in_review"
+  | "changes_requested"
+  | "approved"
+  | "rejected"
+  | "scheduled"
+  | "published"
+  | "failed";
 
 export interface WorkflowDraftRequest {
-  kind: string;
-  brief: Record<string, string>;
+  kind: WorkflowKind;
+  brief: Readonly<Record<string, string>>;
+  expectedRevision?: number;
 }
-
 export interface WorkflowDraft {
   id: EntityId;
-  revision?: number;
-  currentVersionId: string;
+  revision: number;
+  currentVersionId: EntityId;
   title?: string;
+  status: ContentWorkflowStatus;
+  brief?: Readonly<Record<string, string>>;
+  generatedContent?: unknown;
+  updatedAt?: string;
 }
-
+export interface ContentGenerationResult {
+  contentId: EntityId;
+  contentVersionId: EntityId;
+  revision: number;
+}
 export interface WorkflowApiConfig {
-  group: ApiGroup;
-  generateResource: (id: EntityId) => string;
+  readonly group: ApiGroup;
+  readonly generateResource: (id: EntityId) => string;
+  readonly submitReviewResource: (id: EntityId) => string;
+  readonly requiresApproval: true;
 }
 
-export const WORKFLOW_API_CONFIG: Readonly<Record<string, WorkflowApiConfig>> =
-  {
-    themes: { group: "themes", generateResource: (id) => `${id}/generate` },
-    "prayer-points": {
-      group: "prayers",
-      generateResource: (id) => `${id}/generate`,
-    },
-    declarations: {
-      group: "declarations",
-      generateResource: (id) => `${id}/generate`,
-    },
-  };
+export const WORKFLOW_API_CONFIG: Readonly<
+  Record<WorkflowKind, WorkflowApiConfig>
+> = {
+  themes: contentConfig("themes"),
+  "prayer-points": contentConfig("prayers"),
+  declarations: contentConfig("declarations"),
+};
 
 @Injectable({ providedIn: "root" })
 export class WorkflowService {
   private readonly api = inject(ApiClientService);
 
   createDraft(
-    kind: string,
-    brief: Record<string, string>,
+    kind: WorkflowKind,
+    brief: Readonly<Record<string, string>>,
   ): Observable<WorkflowDraft> {
     const config = workflowApiConfig(kind);
     return this.api
@@ -50,30 +73,67 @@ export class WorkflowService {
         kind,
         brief,
       })
-      .pipe(map((response) => response.data));
+      .pipe(map(({ data }) => data));
+  }
+
+  saveDraft(
+    kind: WorkflowKind,
+    id: EntityId,
+    brief: Readonly<Record<string, string>>,
+    expectedRevision: number,
+  ): Observable<WorkflowDraft> {
+    return this.api
+      .update<WorkflowDraftRequest, WorkflowDraft>(
+        workflowApiConfig(kind).group,
+        id,
+        { kind, brief, expectedRevision },
+      )
+      .pipe(map(({ data }) => data));
   }
 
   generate(
-    kind: string,
+    kind: WorkflowKind,
     id: EntityId,
-    revision?: number,
-  ): Observable<AsyncJob> {
+    revision: number,
+  ): Observable<AsyncJob<ContentGenerationResult>> {
     const config = workflowApiConfig(kind);
     return this.api
-      .postResource<{ revision?: number }, AsyncJob>(
+      .postResource<{ revision: number }, AsyncJob<ContentGenerationResult>>(
         config.group,
         config.generateResource(id),
         { revision },
       )
-      .pipe(map((response) => response.data));
+      .pipe(map(({ data }) => data));
+  }
+
+  get(kind: WorkflowKind, id: EntityId): Observable<WorkflowDraft> {
+    return this.api
+      .get<WorkflowDraft>(workflowApiConfig(kind).group, id)
+      .pipe(map(({ data }) => data));
+  }
+
+  list(kind: WorkflowKind): Observable<CursorPage<WorkflowDraft>> {
+    return this.api
+      .list<WorkflowDraft>(workflowApiConfig(kind).group, {
+        limit: 20,
+        sort: "updatedAt",
+        direction: "desc",
+      })
+      .pipe(map(({ data }) => data));
   }
 }
 
-export function workflowApiConfig(kind: string): WorkflowApiConfig {
-  return (
-    WORKFLOW_API_CONFIG[kind] ?? {
-      group: "themes",
-      generateResource: (id) => `${id}/generate`,
-    }
-  );
+export function workflowApiConfig(kind: WorkflowKind): WorkflowApiConfig {
+  const config: WorkflowApiConfig | undefined = WORKFLOW_API_CONFIG[kind];
+  if (!config) throw new Error(`Unsupported workflow kind: ${kind}`);
+  return config;
+}
+
+function contentConfig(group: ApiGroup): WorkflowApiConfig {
+  return {
+    group,
+    generateResource: (id) => `${id}/generate`,
+    submitReviewResource: (id) => `${id}/submit-review`,
+    requiresApproval: true,
+  };
 }
