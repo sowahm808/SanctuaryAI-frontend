@@ -19,14 +19,14 @@ export class ReviewsService {
 
   getReviewQueue(
     filters: ReviewQueueFilters = {},
-  ): Observable<CursorPage<ReviewQueueItem>> {
+  ): Observable<readonly ReviewQueueItem[]> {
     const queryFilters = Object.fromEntries(
       Object.entries(filters).filter(
         (entry): entry is [string, string] => typeof entry[1] === "string",
       ),
     );
     return this.api
-      .list<ReviewQueueItem>("approvals", { filters: queryFilters })
+      .collection<ReviewQueueItem>("approvals", queryFilters)
       .pipe(map((r) => r.data));
   }
   getReviewById(id: string): Observable<ReviewDetail> {

@@ -84,8 +84,10 @@ import { ReviewsService } from "./reviews.service";
       independently.
     </p>
     @if (error()) {
-      <div class="notice error" role="alert">
-        {{ error() }} <button type="button" (click)="loadQueue()">Retry</button>
+      <div class="notice error error-state" role="alert">
+        <h3>Unable to load review queue</h3>
+        <p>{{ error() }}</p>
+        <button type="button" (click)="loadQueue()">Retry</button>
       </div>
     }
     @if (success()) {
@@ -126,7 +128,7 @@ import { ReviewsService } from "./reviews.service";
         <h2>Permission-aware queue</h2>
         @if (loadingQueue()) {
           <p class="muted" aria-live="polite">Loading review queue…</p>
-        } @else {
+        } @else if (!error()) {
           @for (r of queue(); track r.id) {
             <article
               class="review"
@@ -350,10 +352,10 @@ export class ReviewsPage implements OnInit {
     this.error.set(null);
     const f = this.filters.getRawValue();
     const filters: ReviewQueueFilters = {
-      contentType: (f.type || undefined) as ReviewContentType | undefined,
-      assignee: f.assignee || undefined,
+      type: (f.type || undefined) as ReviewContentType | undefined,
+      assigneeId: f.assignee || undefined,
       priority: (f.priority || undefined) as ReviewQueueFilters["priority"],
-      dueAt: f.dueAt || undefined,
+      due: f.dueAt || undefined,
     };
     this.reviews
       .getReviewQueue(filters)
@@ -362,18 +364,23 @@ export class ReviewsPage implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (page) => {
-          this.queue.set(page.items);
-          const id = page.items.some((x) => x.id === this.selectedId())
+        next: (items) => {
+          this.queue.set(items);
+          const id = items.some((x) => x.id === this.selectedId())
             ? this.selectedId()
-            : (page.items[0]?.id ?? null);
+            : (items[0]?.id ?? null);
           if (id) this.select(id);
           else {
             this.selectedId.set(null);
             this.selected.set(null);
           }
         },
-        error: (e) => this.error.set(this.message(e)),
+        error: (e) => {
+          this.queue.set([]);
+          this.selectedId.set(null);
+          this.selected.set(null);
+          this.error.set(this.message(e));
+        },
       });
   }
   select(id: string): void {
@@ -488,7 +495,7 @@ export class ReviewsPage implements OnInit {
   private message(error: unknown): string {
     if (!(error instanceof HttpErrorResponse))
       return "The review service is unavailable. Please try again.";
-    const body = error.error as { message?: string } | null;
+    const body = error.error as { message?: string | string[] } | null;
     const fallback: Record<number, string> = {
       401: "Your session has expired. Please sign in again.",
       403: "You do not have permission to perform this review action.",
@@ -497,7 +504,7 @@ export class ReviewsPage implements OnInit {
       422: "The review action was not valid. Check the supplied details.",
     };
     return (
-      body?.message ||
+      (Array.isArray(body?.message) ? body.message.join(" ") : body?.message) ||
       fallback[error.status] ||
       "The review service could not complete the request."
     );

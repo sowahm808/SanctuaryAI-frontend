@@ -45,6 +45,15 @@ export class ApiClientService {
       withCredentials: true,
     });
   }
+  collection<T>(
+    group: ApiGroup,
+    filters: Readonly<Record<string, string>> = {},
+  ): Observable<ApiResponse<readonly T[]>> {
+    return this.http.get<ApiResponse<readonly T[]>>(this.url(group), {
+      params: scalarParams(filters),
+      withCredentials: true,
+    });
+  }
   get<T>(group: ApiGroup, id: EntityId): Observable<ApiResponse<T>> {
     return this.http.get<ApiResponse<T>>(
       `${this.url(group)}/${encodeURIComponent(id)}`,
@@ -141,6 +150,14 @@ function queryParams(options: QueryOptions): HttpParams {
   for (const [key, value] of Object.entries(options.filters ?? {})) {
     for (const item of typeof value === "string" ? [value] : value)
       params = params.append(`filter[${key}]`, item);
+  }
+  return params;
+}
+
+function scalarParams(filters: Readonly<Record<string, string>>): HttpParams {
+  let params = new HttpParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params = params.set(key, value);
   }
   return params;
 }

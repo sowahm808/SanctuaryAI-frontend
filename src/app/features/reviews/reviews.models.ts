@@ -66,10 +66,10 @@ export interface ReviewDetail extends ReviewQueueItem {
   allowedActions: ReviewAllowedActions;
 }
 export interface ReviewQueueFilters {
-  contentType?: ReviewContentType;
-  assignee?: string;
+  type?: ReviewContentType;
+  assigneeId?: string;
   priority?: ReviewPriority;
-  dueAt?: string;
+  due?: string;
 }
 export interface ReviewDecisionRequest {
   comment?: string;
