@@ -7,6 +7,7 @@ import {
   declarationTitle,
   normalizeDeclarationStatus,
   statusLabel,
+  toDeclarationView,
   toDeclarationSummaryView,
 } from "./declaration.models";
 describe("declaration domain configuration", () => {
@@ -66,5 +67,26 @@ describe("declaration domain configuration", () => {
       toDeclarationSummaryView({ id: "old-id", revision: "revision-uuid" })
         ?.revisionLabel,
     ).toBeNull();
+  });
+
+  it("normalizes legacy string collections and object variants", () => {
+    const record = toDeclarationView({
+      id: "legacy-id",
+      status: null,
+      brief: {
+        audience: "Entire congregation",
+        supportingScriptures: "Psalm 23:1",
+      },
+      variants: { full: "The Lord is my shepherd." },
+    });
+
+    expect(record.brief.audience).toEqual(["Entire congregation"]);
+    expect(record.brief.supportingScriptures).toEqual([
+      { reference: "Psalm 23:1" },
+    ]);
+    expect(record.variants).toMatchObject([
+      { kind: "full", content: "The Lord is my shepherd." },
+    ]);
+    expect(record.status).toBe("draft");
   });
 });

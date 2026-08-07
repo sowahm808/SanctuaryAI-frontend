@@ -148,6 +148,18 @@ export interface DeclarationRecord {
   closingResponse?: string;
   updatedAt: IsoDateTime;
 }
+/** Untrusted transport shape, including records created by the generic workflow. */
+export interface DeclarationDto {
+  id?: unknown;
+  revision?: unknown;
+  currentVersionId?: unknown;
+  title?: unknown;
+  status?: unknown;
+  brief?: unknown;
+  variants?: unknown;
+  closingResponse?: unknown;
+  updatedAt?: unknown;
+}
 export interface DeclarationSummary {
   id: EntityId;
   revision: number | null;
@@ -292,6 +304,41 @@ export function toDeclarationSummaryView(
   };
 }
 
+/** Restricts values used by Angular collection bindings to genuine arrays. */
+export function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+/** Maps both Studio and legacy generic-workflow records to an iterable-safe view. */
+export function toDeclarationView(dto: DeclarationDto): DeclarationRecord {
+  const brief = record(dto.brief) ?? {};
+  const primaryScripture = toScripture(
+    brief["primaryScripture"] ?? brief["scripture"],
+  );
+  return {
+    id: (text(dto.id) ?? "") as EntityId,
+    revision: numericRevision(dto.revision) ?? 0,
+    currentVersionId: text(dto.currentVersionId) as EntityId | undefined,
+    title: text(dto.title ?? brief["title"]),
+    status: normalizeDeclarationStatus(dto.status),
+    brief: {
+      title: text(brief["title"] ?? dto.title) ?? "",
+      declarationType:
+        controlled(brief["declarationType"], DECLARATION_TYPES) ?? "Prophetic",
+      primaryScripture: primaryScripture ?? { reference: "" },
+      supportingScriptures: scriptureArray(brief["supportingScriptures"]),
+      tone: controlled(brief["tone"], DECLARATION_TONES) ?? "Prophetic",
+      audience: controlledStringArray(brief["audience"], AUDIENCES),
+      serviceContext: serviceContextView(brief["serviceContext"]),
+      objective: text(brief["objective"]) ?? "",
+      advancedOptions: advancedOptionsView(brief["advancedOptions"]),
+    },
+    variants: variantArray(dto.variants ?? brief["variants"]),
+    closingResponse: text(dto.closingResponse),
+    updatedAt: (isoDate(dto.updatedAt) ?? "") as IsoDateTime,
+  };
+}
+
 function text(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
@@ -318,6 +365,15 @@ function controlledArray<T extends string>(
   );
   return values.length ? values : undefined;
 }
+function controlledStringArray<T extends string>(
+  value: unknown,
+  options: readonly T[],
+): T[] {
+  const source = typeof value === "string" ? [value] : asArray<unknown>(value);
+  return source.filter(
+    (item): item is T => controlled(item, options) !== undefined,
+  );
+}
 function numericRevision(value: unknown): number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 0
     ? value
@@ -330,4 +386,79 @@ function isoDate(value: unknown): IsoDateTime | null {
 function scripture(value: unknown): ScriptureReference | undefined {
   const reference = text(record(value)?.["reference"]);
   return reference ? { reference } : undefined;
+}
+
+function toScripture(value: unknown): ScriptureReference | undefined {
+  if (typeof value === "string") {
+    const reference = text(value);
+    return reference ? { reference } : undefined;
+  }
+  return scripture(value);
+}
+
+function scriptureArray(value: unknown): ScriptureReference[] {
+  const source = typeof value === "string" ? [value] : asArray<unknown>(value);
+  return source.flatMap((item) => {
+    const mapped = toScripture(item);
+    return mapped ? [mapped] : [];
+  });
+}
+
+function variantArray(value: unknown): DeclarationVariant[] {
+  const source = Array.isArray(value)
+    ? value.map((item) => ({ key: undefined, value: item }))
+    : Object.entries(record(value) ?? {}).map(([key, item]) => ({
+        key,
+        value: item,
+      }));
+  return source.flatMap(({ key, value }, index) => {
+    const item = record(value);
+    const kind = controlled(
+      item?.["kind"] ?? key,
+      Object.keys(VARIANT_LABELS) as VariantKind[],
+    );
+    const content = text(item?.["content"] ?? value);
+    if (!kind || !content) return [];
+    return [
+      {
+        id: (text(item?.["id"]) ?? `${kind}-${index}`) as EntityId,
+        kind,
+        content,
+        updatedAt: isoDate(item?.["updatedAt"]) ?? undefined,
+      },
+    ];
+  });
+}
+
+function serviceContextView(value: unknown): ServiceContext {
+  const source = record(value) ?? {};
+  return {
+    serviceType: controlled(source["serviceType"], SERVICE_TYPES),
+    event: text(source["event"]),
+    occasion: text(source["occasion"]),
+    date: isoDate(source["date"]),
+    notes: text(source["notes"]),
+  };
+}
+
+function advancedOptionsView(value: unknown): DeclarationAdvancedOptions {
+  const source = record(value) ?? {};
+  const flag = (key: string, fallback: boolean) =>
+    typeof source[key] === "boolean" ? (source[key] as boolean) : fallback;
+  return {
+    length:
+      controlled(source["length"], [
+        "short",
+        "standard",
+        "extended",
+      ] as const) ?? "standard",
+    includeScriptureQuotations: flag("includeScriptureQuotations", true),
+    includeCongregationalResponse: flag("includeCongregationalResponse", true),
+    includeAmenResponse: flag("includeAmenResponse", true),
+    includeSocialVersion: flag("includeSocialVersion", false),
+    includeFlyerVersion: flag("includeFlyerVersion", false),
+    includeVideoVoiceoverVersion: flag("includeVideoVoiceoverVersion", false),
+    includePersonalVersion: flag("includePersonalVersion", false),
+    includeCongregationalVersion: flag("includeCongregationalVersion", true),
+  };
 }

@@ -9,6 +9,7 @@ import type { CursorPage, EntityId } from "../../models/domain.models";
 import type {
   DeclarationApproval,
   DeclarationDraftForm,
+  DeclarationDto,
   DeclarationJob,
   DeclarationRecord,
   DeclarationSummary,
@@ -19,7 +20,11 @@ import type {
   RefineAction,
   VariantKind,
 } from "./declaration.models";
-import { toDeclarationSummaryView } from "./declaration.models";
+import {
+  asArray,
+  toDeclarationSummaryView,
+  toDeclarationView,
+} from "./declaration.models";
 @Injectable({ providedIn: "root" })
 export class DeclarationService {
   private api = inject(ApiClientService);
@@ -62,8 +67,8 @@ export class DeclarationService {
   }
   get(id: EntityId): Observable<DeclarationRecord> {
     return this.api
-      .get<DeclarationRecord>("declarations", id)
-      .pipe(unwrapData());
+      .get<DeclarationDto>("declarations", id)
+      .pipe(unwrapData(), map(toDeclarationView));
   }
   create(brief: DeclarationDraftForm): Observable<DeclarationRecord> {
     return this.api
@@ -96,23 +101,29 @@ export class DeclarationService {
   }
   timeline(id: EntityId): Observable<readonly DeclarationTimelineEvent[]> {
     return this.api
-      .getResource<readonly DeclarationTimelineEvent[]>(
+      .getResource<{ items?: unknown }>(
         "declarations",
         resourcePath(id, "timeline"),
       )
-      .pipe(unwrapData());
+      .pipe(
+        map((response) =>
+          asArray<DeclarationTimelineEvent>(response.data?.items),
+        ),
+      );
   }
   versions(id: EntityId): Observable<readonly DeclarationVersion[]> {
     return this.api
-      .getResource<readonly DeclarationVersion[]>(
+      .getResource<{ items?: unknown }>(
         "declarations",
         resourcePath(id, "versions"),
       )
-      .pipe(unwrapData());
+      .pipe(
+        map((response) => asArray<DeclarationVersion>(response.data?.items)),
+      );
   }
-  approval(id: EntityId): Observable<DeclarationApproval> {
+  approval(id: EntityId): Observable<DeclarationApproval | null> {
     return this.api
-      .getResource<DeclarationApproval>(
+      .getResource<DeclarationApproval | null>(
         "declarations",
         resourcePath(id, "approval"),
       )
