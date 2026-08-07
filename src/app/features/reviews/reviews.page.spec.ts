@@ -10,7 +10,7 @@ import { NEVER, of } from "rxjs";
 import { describe, expect, it, vi } from "vitest";
 import type { ReviewDetail } from "./reviews.models";
 import { ReviewsPage } from "./reviews.page";
-import { ReviewsService } from "./reviews.service";
+import { ApprovalService } from "./approval.service";
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
@@ -45,18 +45,13 @@ const submittedReview: ReviewDetail = {
 describe("ReviewsPage", () => {
   it("renders a submitted approval from the paginated API envelope", async () => {
     const reviews = {
-      getReviewQueue: vi.fn(() =>
-        of({
-          data: { items: [submittedReview], total: 1 },
-          correlationId: "queue-correlation",
-        }),
-      ),
-      getReviewById: vi.fn(() => NEVER),
+      getQueue: vi.fn(() => of({ items: [submittedReview], total: 1 })),
+      getDetail: vi.fn(() => NEVER),
       getEligibleReviewers: vi.fn(() => of({ items: [], total: 0 })),
     };
     await TestBed.configureTestingModule({
       imports: [ReviewsPage],
-      providers: [{ provide: ReviewsService, useValue: reviews }],
+      providers: [{ provide: ApprovalService, useValue: reviews }],
     }).compileComponents();
 
     const fixture = TestBed.createComponent(ReviewsPage);

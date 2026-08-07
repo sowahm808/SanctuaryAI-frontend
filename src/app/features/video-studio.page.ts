@@ -425,6 +425,6 @@ export class VideoStudioPage {
         uploads: this.uploads(),
       }),
     );
-    this.saveState.set("Saved locally with uploads and draft metadata");
+    this.saveState.set("Prototype recovery cache only — not saved to server");
   }
 }

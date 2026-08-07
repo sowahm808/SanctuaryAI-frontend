@@ -499,7 +499,7 @@ export class OnboardingPage {
   }
   private persist(): void {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(this.form.getRawValue()));
-    this.savedMessage.set("Saved locally");
+    this.savedMessage.set("Recovery cache updated — not yet submitted");
   }
   private finish(): void {
     if (this.form.invalid) {

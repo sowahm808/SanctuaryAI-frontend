@@ -1,0 +1,25 @@
+# Frontend/backend contract matrix
+
+This matrix records the contract audit against the deployed route inventory in
+`BACKEND_API_ROUTE_GUIDE.md`. Browser paths retain the same-origin `/api`
+prefix; the proxy supplies backend `/api/v1`.
+
+| Frontend method                                 | HTTP request                                         | Request DTO               | Expected response                                | Backend route / actual response                               | Result                                |
+| ----------------------------------------------- | ---------------------------------------------------- | ------------------------- | ------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------- |
+| `ApiClientService.list`                         | `GET /api/:group`                                    | cursor query              | `ApiResponse<CursorPage<T>>`                     | `GET /api/v1/:group`; envelope cursor page                    | Match; shared normalization added     |
+| `ApiClientService.get/update`                   | `GET/PATCH /api/:group/:id`                          | string ID / partial DTO   | `ApiResponse<T>`                                 | conventional resource routes; envelope                        | Match; IDs encoded                    |
+| `WorkflowService.createDraft`                   | `POST /api/themes\|prayers\|declarations`            | workflow brief            | `ApiResponse<WorkflowDraft>`                     | same deployed routes; envelope                                | Match                                 |
+| `WorkflowService.saveDraft`                     | `PATCH /api/:group/:id`                              | brief + expected revision | `ApiResponse<WorkflowDraft>`                     | canonical resource PATCH; envelope                            | Fixed                                 |
+| `WorkflowService.generate`                      | `POST /api/:group/:id/generate`                      | revision                  | `ApiResponse<AsyncJob<ContentGenerationResult>>` | same route; terminal result contains content/version identity | Fixed typing and path encoding        |
+| `ApprovalService.getQueue/getDetail`            | `GET /api/approvals[/:id]`                           | filters / string ID       | cursor page / approval detail                    | same routes; envelope                                         | Fixed duplicate transport and unwrap  |
+| `ApprovalService.approve/reject/requestChanges` | `POST /api/approvals/:id/:decision`                  | reason/comment            | approval detail                                  | same route; envelope                                          | Match; encoded path                   |
+| `ApprovalService.assign/comment`                | `PATCH .../:id/assignee`, `POST .../:id/comments`    | user ID / body            | detail / comment                                 | same routes; envelope                                         | Match; string IDs                     |
+| `SermonService.create/save`                     | `POST /api/sermons`, `PUT /api/sermons/:id/draft`    | sermon draft              | sermon record                                    | same routes; envelope                                         | Match; encoded path                   |
+| `SermonService.runAi/requestExport`             | `POST .../:id/ai-jobs\|exports`                      | job/export DTO            | async job                                        | same routes; envelope                                         | Match; encoded path                   |
+| `CampaignService.create/generate`               | `POST /api/campaigns[/:id/generate]`                 | campaign brief/revision   | draft / async job                                | same deployed routes; envelope                                | Match; encoded path                   |
+| `CampaignService.regenerateSection`             | `POST /api/campaigns/:id/sections/:scope/regenerate` | revision                  | async job                                        | same route; envelope                                          | Fixed segment encoding                |
+| `AiJobService.watch/cancel`                     | `GET /api/jobs/:id`, `POST .../:id/cancel`           | none / empty object       | typed async job                                  | same routes; envelope                                         | Match; encoded path                   |
+| `SessionService.restore/recover`                | `GET /api/auth/session`                              | cookie                    | raw or wrapped auth session                      | transitional raw/envelope route                               | Match; concurrent recovery serialized |
+
+`ReviewsService` was removed. `ApprovalService` is now the sole approval HTTP
+transport and feature pages consume its already-unwrapped cursor pages.

@@ -20,6 +20,7 @@ export class SessionService {
   private readonly firebase = inject(FirebaseAuthService);
   private readonly current = signal<AuthSession | null>(null);
   private restoreRequest?: Observable<boolean>;
+  private recoveryRequest?: Observable<boolean>;
   readonly session = this.current.asReadonly();
   readonly user = computed(() => this.current()?.user ?? null);
   readonly authenticated = computed(() => this.current() !== null);
@@ -65,6 +66,21 @@ export class SessionService {
   }
   refresh(): Observable<boolean> {
     return this.readSession();
+  }
+  /** Serializes concurrent 401 recovery into one backend session check. */
+  recoverExpiredSession(): Observable<boolean> {
+    this.recoveryRequest ??= this.readSession().pipe(
+      finalize(() => {
+        this.recoveryRequest = undefined;
+      }),
+      shareReplay(1),
+    );
+    return this.recoveryRequest;
+  }
+  expire(): void {
+    this.clear();
+    this.broadcast("signed-out");
+    void this.router.navigateByUrl("/auth/session-expired");
   }
   establish(session: AuthSession): void {
     this.setSession(session);

@@ -4,7 +4,6 @@ import type { Observable } from "rxjs";
 import type {
   ApiResponse,
   CursorPage,
-  EntityId,
   QueryOptions,
 } from "../../models/domain.models";
 import { getRuntimeConfig } from "../config/runtime-config";
@@ -32,6 +31,15 @@ export const API_GROUPS = [
 ] as const;
 export type ApiGroup = (typeof API_GROUPS)[number];
 
+/** Encodes dynamic nested-resource segments without encoding path separators. */
+export function resourcePath(
+  ...segments: readonly (string | number)[]
+): string {
+  return segments
+    .map((segment) => encodeURIComponent(String(segment)))
+    .join("/");
+}
+
 /** A typed transport boundary used by feature services; components never use HttpClient. */
 @Injectable({ providedIn: "root" })
 export class ApiClientService {
@@ -54,7 +62,7 @@ export class ApiClientService {
       withCredentials: true,
     });
   }
-  get<T>(group: ApiGroup, id: EntityId): Observable<ApiResponse<T>> {
+  get<T>(group: ApiGroup, id: string): Observable<ApiResponse<T>> {
     return this.http.get<ApiResponse<T>>(
       `${this.url(group)}/${encodeURIComponent(id)}`,
       { withCredentials: true },
@@ -87,7 +95,7 @@ export class ApiClientService {
   }
   update<TBody extends object, TResult>(
     group: ApiGroup,
-    id: EntityId,
+    id: string,
     body: TBody,
   ): Observable<ApiResponse<TResult>> {
     return this.http.patch<ApiResponse<TResult>>(
@@ -129,7 +137,7 @@ export class ApiClientService {
       { withCredentials: true },
     );
   }
-  remove(group: ApiGroup, id: EntityId): Observable<void> {
+  remove(group: ApiGroup, id: string): Observable<void> {
     return this.http.delete<void>(
       `${this.url(group)}/${encodeURIComponent(id)}`,
       { withCredentials: true },

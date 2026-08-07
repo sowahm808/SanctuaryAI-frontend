@@ -28,7 +28,7 @@ type SaveState =
   | "Recovered draft"
   | "Unsaved changes"
   | "Saving locally…"
-  | "Saved locally"
+  | "Recovery cache updated"
   | "Saving to server…"
   | "Synced to server"
   | "Server conflict detected";
@@ -735,7 +735,7 @@ export class SermonPage implements OnInit, OnDestroy {
       { ...this.draftRequest(), savedAt: new Date().toISOString() },
       "current",
     );
-    this.saveState.set("Saved locally");
+    this.saveState.set("Recovery cache updated");
   }
   private async restoreLocalDraft(): Promise<void> {
     const db = await this.draftDb();

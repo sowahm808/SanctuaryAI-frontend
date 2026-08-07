@@ -49,7 +49,7 @@ export const organizationSetupGuard: CanActivateFn = () =>
   inject(Router).createUrlTree(["/onboarding"]);
 export const subscriptionGuard: CanActivateFn = () =>
   inject(SessionService).subscriptionActive() ||
-  inject(Router).createUrlTree(["/app/workspace/subscription"]);
+  inject(Router).createUrlTree(["/app/subscription"]);
 export interface DirtyAware {
   hasUnsavedChanges(): boolean;
 }

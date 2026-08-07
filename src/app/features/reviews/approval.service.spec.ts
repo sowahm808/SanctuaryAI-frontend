@@ -61,6 +61,6 @@ describe("ApprovalService", () => {
       injector.get(ApprovalService),
     );
 
-    service.getQueue().subscribe((result) => expect(result).toBe(page));
+    service.getQueue().subscribe((result) => expect(result).toEqual(page));
   });
 });

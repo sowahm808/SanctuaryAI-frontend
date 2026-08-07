@@ -24,7 +24,7 @@ import type {
   ReviewQueueFilters,
   ReviewQueueItem,
 } from "./reviews.models";
-import { ReviewsService } from "./reviews.service";
+import { ApprovalService } from "./approval.service";
 
 @Component({
   standalone: true,
@@ -325,7 +325,7 @@ import { ReviewsService } from "./reviews.service";
     </div>`,
 })
 export class ReviewsPage implements OnInit {
-  private readonly reviews = inject(ReviewsService);
+  private readonly reviews = inject(ApprovalService);
   private readonly destroyRef = inject(DestroyRef);
   readonly queue = signal<ReviewQueueItem[]>([]);
   readonly filteredQueue = computed<readonly ReviewQueueItem[]>(() => {
@@ -385,24 +385,14 @@ export class ReviewsPage implements OnInit {
       due: f.dueAt || undefined,
     };
     this.reviews
-      .getReviewQueue(filters)
+      .getQueue(filters)
       .pipe(
         finalize(() => this.loadingQueue.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (response) => {
-          const items = response?.data?.items;
-          if (!Array.isArray(items)) {
-            console.error("Unexpected approval queue response:", response);
-            this.queue.set([]);
-            this.selectedId.set(null);
-            this.clearDetail();
-            this.queueError.set(
-              "The server returned an invalid review queue response.",
-            );
-            return;
-          }
+        next: (page) => {
+          const items = page.items;
           this.queue.set([...items]);
           const id = items.some((x) => x.id === this.selectedId())
             ? this.selectedId()
@@ -427,7 +417,7 @@ export class ReviewsPage implements OnInit {
     this.loadingDetail.set(true);
     this.error.set(null);
     this.reviews
-      .getReviewById(id)
+      .getDetail(id)
       .pipe(
         finalize(() => this.loadingDetail.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -467,9 +457,7 @@ export class ReviewsPage implements OnInit {
       return;
     }
     this.submit(
-      this.reviews.assign(item.id, {
-        assigneeId: this.decision.controls.assigneeId.value,
-      }),
+      this.reviews.assign(item.id, this.decision.controls.assigneeId.value),
       "Review assigned.",
       false,
     );
@@ -481,7 +469,7 @@ export class ReviewsPage implements OnInit {
     this.submitting.set(true);
     this.error.set(null);
     this.reviews
-      .addComment(item.id, { body })
+      .comment(item.id, body)
       .pipe(
         finalize(() => this.submitting.set(false)),
         takeUntilDestroyed(this.destroyRef),
@@ -496,7 +484,7 @@ export class ReviewsPage implements OnInit {
       });
   }
   private submit(
-    request: ReturnType<ReviewsService["approve"]>,
+    request: ReturnType<ApprovalService["approve"]>,
     success: string,
     refreshQueue: boolean,
   ): void {

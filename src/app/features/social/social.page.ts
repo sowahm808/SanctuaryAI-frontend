@@ -435,7 +435,7 @@ export class SocialPage {
     this.audit.update((items) => [
       {
         at: new Date().toISOString(),
-        actor: "Current user",
+        actor: "Local prototype session",
         action,
         correlationId: `corr-social-${items.length + 1}`,
       },

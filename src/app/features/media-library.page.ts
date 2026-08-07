@@ -326,7 +326,7 @@ export class MediaLibraryPage {
         tags: ["new"],
         dimensions: file.type || "unknown",
         size: `${Math.max(1, Math.round(file.size / 1024))} KB`,
-        owner: "Current user",
+        owner: "Local prototype upload",
         uploadState: "complete" as const,
         altText: `Uploaded asset ${file.name}`,
         archived: false,

@@ -6,18 +6,18 @@ export type ReviewContentType =
   | "flyer"
   | "video"
   | "social_post";
-export type ReviewStatus =
+export type ApprovalStatus =
   "pending" | "in_review" | "changes_requested" | "approved" | "rejected";
 export type ReviewPriority = "low" | "normal" | "high";
 
-export interface ReviewAllowedActions {
+export interface AllowedApprovalActions {
   approve: boolean;
   reject: boolean;
   requestChanges: boolean;
   assign: boolean;
   comment: boolean;
 }
-export interface ReviewQueueItem {
+export interface ApprovalSummary {
   id: string;
   contentId: string;
   contentVersionId: string;
@@ -29,7 +29,7 @@ export interface ReviewQueueItem {
   assigneeName?: string | null;
   priority: ReviewPriority;
   dueAt?: string | null;
-  status: ReviewStatus;
+  status: ApprovalStatus;
   publishingAuthorizationStatus?: string | null;
   submittedAt: string;
   updatedAt: string;
@@ -42,14 +42,14 @@ export interface ReviewVersion {
   createdAt: string;
   createdByName?: string | null;
 }
-export interface ReviewComment {
+export interface ApprovalComment {
   id: string;
   authorId: string;
   authorName: string;
   body: string;
   createdAt: string;
 }
-export interface ReviewAuditEntry {
+export interface ApprovalAuditEntry {
   id: string;
   actorId: string;
   actorName: string;
@@ -59,15 +59,15 @@ export interface ReviewAuditEntry {
   action: string;
   summary: string;
 }
-export interface ReviewDetail extends ReviewQueueItem {
+export interface ApprovalDetail extends ApprovalSummary {
   previousVersion?: ReviewVersion | null;
   proposedVersion: ReviewVersion;
-  comments: ReviewComment[];
-  auditHistory: ReviewAuditEntry[];
-  allowedActions: ReviewAllowedActions;
+  comments: ApprovalComment[];
+  auditHistory: ApprovalAuditEntry[];
+  allowedActions: AllowedApprovalActions;
 }
 export interface ReviewQueueFilters {
-  status?: ReviewStatus;
+  status?: ApprovalStatus;
   type?: ReviewContentType;
   assigneeId?: string;
   priority?: ReviewPriority;
@@ -84,6 +84,16 @@ export interface ReviewDecisionRequest {
   comment?: string;
   reason?: string;
 }
+export type ApprovalDecision = "approve" | "reject" | "request-changes";
+
+// Transitional names retained for view imports; transport and persisted models
+// have one canonical definition above.
+export type ReviewStatus = ApprovalStatus;
+export type ReviewAllowedActions = AllowedApprovalActions;
+export type ReviewQueueItem = ApprovalSummary;
+export type ReviewDetail = ApprovalDetail;
+export type ReviewComment = ApprovalComment;
+export type ReviewAuditEntry = ApprovalAuditEntry;
 export interface AssignReviewRequest {
   assigneeId: string;
 }
