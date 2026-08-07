@@ -392,7 +392,6 @@ export class ReviewsPage implements OnInit {
       )
       .subscribe({
         next: (response) => {
-          console.log("Approvals API response:", response);
           const items = response?.data?.items;
           if (!Array.isArray(items)) {
             console.error("Unexpected approval queue response:", response);

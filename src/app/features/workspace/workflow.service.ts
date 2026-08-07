@@ -14,6 +14,7 @@ export interface WorkflowDraftRequest {
 export interface WorkflowDraft {
   id: EntityId;
   revision?: number;
+  currentVersionId: string;
   title?: string;
 }
 

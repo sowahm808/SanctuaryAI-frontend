@@ -28,6 +28,7 @@ export interface SermonRecord {
   metadata: SermonMetadata;
   sections: readonly SermonBlock[];
   revision: number;
+  currentVersionId: string;
   updatedAt: IsoDateTime;
 }
 
@@ -62,16 +63,6 @@ export class SermonService {
         "sermons",
         `${id}/draft`,
         body,
-      )
-      .pipe(map((response) => response.data));
-  }
-
-  submitForReview(id: EntityId): Observable<SermonRecord> {
-    return this.api
-      .postResource<Record<string, never>, SermonRecord>(
-        "sermons",
-        `${id}/submit-review`,
-        {},
       )
       .pipe(map((response) => response.data));
   }

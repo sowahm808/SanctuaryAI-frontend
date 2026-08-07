@@ -20,6 +20,7 @@ export interface ReviewAllowedActions {
 export interface ReviewQueueItem {
   id: string;
   contentId: string;
+  contentVersionId: string;
   contentType: ReviewContentType;
   title: string;
   ownerId: string;
@@ -66,10 +67,18 @@ export interface ReviewDetail extends ReviewQueueItem {
   allowedActions: ReviewAllowedActions;
 }
 export interface ReviewQueueFilters {
+  status?: ReviewStatus;
   type?: ReviewContentType;
   assigneeId?: string;
   priority?: ReviewPriority;
   due?: string;
+}
+export interface SubmitForReviewRequest {
+  contentId: string;
+  contentType: ReviewContentType;
+  contentVersionId: string;
+  priority?: ReviewPriority;
+  assigneeId?: string | null;
 }
 export interface ReviewDecisionRequest {
   comment?: string;
