@@ -21,6 +21,7 @@ describe("DeclarationService response normalization", () => {
     list: vi.fn(),
     get: vi.fn(),
     getResource: vi.fn(),
+    update: vi.fn(),
   };
   let service: DeclarationService;
 
@@ -62,5 +63,53 @@ describe("DeclarationService response normalization", () => {
     await expect(
       firstValueFrom(service.approval("declaration-1" as EntityId)),
     ).resolves.toBeNull();
+  });
+
+  it("uses the detail GET revision and then the new PATCH revision", async () => {
+    const id = "declaration-1" as EntityId;
+    const brief = {
+      title: "Declaration",
+      declarationType: "Prophetic",
+      primaryScripture: { reference: "John 3:16" },
+      supportingScriptures: [],
+      tone: "Prophetic",
+      audience: ["Entire congregation"],
+      serviceContext: {},
+      objective: "Hope",
+      advancedOptions: {
+        length: "standard",
+        includeScriptureQuotations: true,
+        includeCongregationalResponse: true,
+        includeAmenResponse: true,
+        includeSocialVersion: false,
+        includeFlyerVersion: false,
+        includeVideoVoiceoverVersion: false,
+        includePersonalVersion: false,
+        includeCongregationalVersion: true,
+      },
+    } as const;
+    const dto = (revision: string) => ({
+      data: {
+        id,
+        revision,
+        status: "draft",
+        brief,
+        variants: [],
+        updatedAt: "2026-08-07T00:00:00Z",
+      },
+    });
+    api.get.mockReturnValue(of(dto("A")));
+    api.update
+      .mockReturnValueOnce(of(dto("B")))
+      .mockReturnValueOnce(of(dto("C")));
+
+    const loaded = await firstValueFrom(service.get(id));
+    const first = await firstValueFrom(
+      service.save(id, brief as never, loaded.revisionToken),
+    );
+    await firstValueFrom(service.save(id, brief as never, first.revisionToken));
+
+    expect(api.update.mock.calls[0][2].expectedRevision).toBe("A");
+    expect(api.update.mock.calls[1][2].expectedRevision).toBe("B");
   });
 });

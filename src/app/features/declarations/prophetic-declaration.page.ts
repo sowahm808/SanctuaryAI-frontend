@@ -16,7 +16,14 @@ import {
   Validators,
 } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
-import { catchError, finalize, forkJoin, of, switchMap } from "rxjs";
+import {
+  catchError,
+  finalize,
+  forkJoin,
+  of,
+  switchMap,
+  type Observable,
+} from "rxjs";
 import { AiJobService } from "../../core/ai/ai-job.service";
 import type { EntityId } from "../../models/domain.models";
 import { DeclarationBriefFormComponent } from "./declaration-brief-form.component";
@@ -195,6 +202,27 @@ import { DeclarationService } from "./declaration.service";
         {{ message() }}
       </section>
     }
+    @if (conflict()) {
+      <section class="card notice error" role="alert">
+        <b>This declaration changed since you loaded it.</b>
+        <p>
+          Reload the server version, or review and manually reapply your unsaved
+          edits.
+        </p>
+        <div class="actions">
+          <button
+            class="btn secondary"
+            type="button"
+            (click)="reloadConflict()"
+          >
+            Reload latest
+          </button>
+          <button class="btn" type="button" (click)="reviewConflict()">
+            Review changes
+          </button>
+        </div>
+      </section>
+    }
     @if (job(); as j) {
       <section class="card notice" aria-live="polite">
         <div class="section-head">
@@ -275,6 +303,9 @@ export class PropheticDeclarationPage implements OnInit {
   readonly message = signal<string | null>(null);
   readonly isError = signal(false);
   readonly recentError = signal<string | null>(null);
+  readonly serverRevision = signal<string | null>(null);
+  readonly loadedSnapshot = signal<DeclarationDraftForm | null>(null);
+  readonly conflict = signal<DeclarationDraftForm | null>(null);
   readonly busy = computed(
     () => this.saving() || this.generating() || this.submittingReview(),
   );
@@ -413,7 +444,7 @@ export class PropheticDeclarationPage implements OnInit {
     this.generating.set(true);
     this.persist()
       .pipe(
-        switchMap((r) => this.service.generate(r.id, r.revision)),
+        switchMap((r) => this.service.generate(r.id, this.requireRevision())),
         switchMap((j) => {
           this.job.set(j);
           return this.jobs.watch(j);
@@ -514,7 +545,7 @@ export class PropheticDeclarationPage implements OnInit {
         error: (e) => this.fail(e),
       });
   }
-  private persist() {
+  private persist(retried = false): Observable<DeclarationRecord> {
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.fail(new Error("Review the highlighted declaration brief fields."));
@@ -534,10 +565,15 @@ export class PropheticDeclarationPage implements OnInit {
     } as DeclarationDraftForm;
     brief.title = declarationTitle({ brief });
     const r = this.record();
+    const revision = this.serverRevision();
+    if (r && !revision) {
+      this.fail(new Error("Reload this declaration before saving."));
+      this.saving.set(false);
+      return of();
+    }
+    const localChanged = !this.sameBrief(brief, this.loadedSnapshot());
     return (
-      r
-        ? this.service.save(r.id, brief, r.revision)
-        : this.service.create(brief)
+      r ? this.service.save(r.id, brief, revision!) : this.service.create(brief)
     ).pipe(
       finalize(() => this.saving.set(false)),
       switchMap((x) => {
@@ -547,6 +583,21 @@ export class PropheticDeclarationPage implements OnInit {
         return of(x);
       }),
       catchError((e) => {
+        if (r && e instanceof HttpErrorResponse && e.status === 409) {
+          return this.service.get(r.id).pipe(
+            switchMap((latest) => {
+              this.serverRevision.set(latest.revisionToken);
+              if (!localChanged && !retried) {
+                this.apply(latest);
+                return this.persist(true);
+              }
+              this.conflict.set(brief);
+              this.message.set("This declaration changed since you loaded it.");
+              this.isError.set(true);
+              return of();
+            }),
+          );
+        }
         this.fail(e);
         return of();
       }),
@@ -554,6 +605,9 @@ export class PropheticDeclarationPage implements OnInit {
   }
   private apply(r: DeclarationRecord) {
     this.record.set(r);
+    this.serverRevision.set(r.revisionToken);
+    this.loadedSnapshot.set(structuredClone(r.brief));
+    this.conflict.set(null);
     this.form.patchValue({
       ...r.brief,
       serviceContext: {
@@ -566,6 +620,39 @@ export class PropheticDeclarationPage implements OnInit {
     this.supportingScriptures.clear();
     for (const s of r.brief.supportingScriptures || [])
       this.supportingScriptures.push(this.scriptureGroup(s));
+  }
+  reloadConflict() {
+    const id = this.record()?.id;
+    if (id) this.load(id);
+  }
+  reviewConflict() {
+    const local = this.conflict();
+    const id = this.record()?.id;
+    if (!local || !id) return;
+    this.service.get(id).subscribe({
+      next: (latest) => {
+        this.apply(latest);
+        this.form.patchValue(local as any);
+        this.conflict.set(local);
+        this.message.set(
+          "Review your edits against the latest declaration before saving.",
+        );
+        this.isError.set(true);
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  private requireRevision(): string {
+    const revision = this.serverRevision();
+    if (!revision)
+      throw new Error("Reload this declaration before continuing.");
+    return revision;
+  }
+  private sameBrief(
+    a: DeclarationDraftForm,
+    b: DeclarationDraftForm | null,
+  ): boolean {
+    return b !== null && JSON.stringify(a) === JSON.stringify(b);
   }
   private scriptureGroup(v: ScriptureReference = { reference: "" }) {
     return new FormGroup({

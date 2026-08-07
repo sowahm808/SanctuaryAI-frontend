@@ -62,7 +62,9 @@ import { PrayerPointEditorComponent } from "./prayer-point-editor.component";
           <h2>{{ prayer.title }}</h2>
           <p class="muted">{{ prayer.brief.theme }}</p>
         </div>
-        <span class="badge">v{{ prayer.revision }}</span>
+        @if (prayer.versionNumber !== undefined) {
+          <span class="badge">v{{ prayer.versionNumber }}</span>
+        }
       </div>
       <div class="metadata">
         <span

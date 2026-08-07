@@ -80,7 +80,8 @@ export interface PrayerPoint {
 }
 export interface PrayerRecord {
   id: EntityId;
-  revision: number;
+  revisionToken: string;
+  versionNumber?: number;
   currentVersionId?: EntityId;
   title: string;
   status: PrayerStatus;
@@ -89,6 +90,14 @@ export interface PrayerRecord {
   introduction?: string;
   closingDeclaration?: string;
   updatedAt: IsoDateTime;
+}
+export interface PrayerDetailDto extends Omit<PrayerRecord, "revisionToken"> {
+  revision: string;
+}
+
+export function toPrayerView(dto: PrayerDetailDto): PrayerRecord {
+  const { revision, ...record } = dto;
+  return { ...record, revisionToken: revision };
 }
 export interface PrayerSummary {
   id: EntityId;

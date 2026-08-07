@@ -99,6 +99,8 @@ export const DECLARATION_STATUS_LABELS: Record<DeclarationStatus, string> = {
   cancelled: "Cancelled",
 };
 export type VariantKind = keyof typeof VARIANT_LABELS;
+/** Opaque resource concurrency token returned as `revision` by the API. */
+export type RevisionToken = string;
 export interface ScriptureReference {
   reference: string;
 }
@@ -137,9 +139,10 @@ export interface DeclarationVariant {
   content: string;
   updatedAt?: IsoDateTime;
 }
-export interface DeclarationRecord {
+export interface DeclarationViewModel {
   id: EntityId;
-  revision: number;
+  revisionToken: RevisionToken;
+  versionNumber?: number;
   currentVersionId?: EntityId;
   title?: string;
   status: DeclarationStatus;
@@ -148,10 +151,12 @@ export interface DeclarationRecord {
   closingResponse?: string;
   updatedAt: IsoDateTime;
 }
+export type DeclarationRecord = DeclarationViewModel;
 /** Untrusted transport shape, including records created by the generic workflow. */
 export interface DeclarationDto {
   id?: unknown;
-  revision?: unknown;
+  revision: RevisionToken;
+  versionNumber?: number;
   currentVersionId?: unknown;
   title?: unknown;
   status?: unknown;
@@ -317,7 +322,8 @@ export function toDeclarationView(dto: DeclarationDto): DeclarationRecord {
   );
   return {
     id: (text(dto.id) ?? "") as EntityId,
-    revision: numericRevision(dto.revision) ?? 0,
+    revisionToken: dto.revision,
+    versionNumber: numericRevision(dto.versionNumber) ?? undefined,
     currentVersionId: text(dto.currentVersionId) as EntityId | undefined,
     title: text(dto.title ?? brief["title"]),
     status: normalizeDeclarationStatus(dto.status),

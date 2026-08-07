@@ -16,7 +16,14 @@ import {
   Validators,
 } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
-import { catchError, finalize, forkJoin, of, switchMap } from "rxjs";
+import {
+  catchError,
+  finalize,
+  forkJoin,
+  of,
+  switchMap,
+  type Observable,
+} from "rxjs";
 import { AiJobService } from "../../core/ai/ai-job.service";
 import type { EntityId } from "../../models/domain.models";
 import { PrayerApprovalPanelComponent } from "./prayer-approval-panel.component";
@@ -201,6 +208,27 @@ import { PrayerVersionHistoryComponent } from "./prayer-version-history.componen
         {{ message() }}
       </section>
     }
+    @if (conflict()) {
+      <section class="card notice error" role="alert">
+        <b>This prayer collection changed since you loaded it.</b>
+        <p>
+          Reload the latest version, or review and manually reapply your unsaved
+          edits.
+        </p>
+        <div class="actions">
+          <button
+            class="btn secondary"
+            type="button"
+            (click)="reloadConflict()"
+          >
+            Reload latest
+          </button>
+          <button class="btn" type="button" (click)="reviewConflict()">
+            Review changes
+          </button>
+        </div>
+      </section>
+    }
     @if (job(); as currentJob) {
       <section class="card progress-card" aria-live="polite">
         <div class="section-head">
@@ -277,6 +305,9 @@ export class PrayerCollectionPage implements OnInit {
   readonly message = signal<string | null>(null);
   readonly isError = signal(false);
   readonly recentError = signal<string | null>(null);
+  readonly serverRevision = signal<string | null>(null);
+  readonly loadedSnapshot = signal<PrayerDraftForm | null>(null);
+  readonly conflict = signal<PrayerDraftForm | null>(null);
   readonly busy = computed(
     () => this.saving() || this.generating() || this.reviewing(),
   );
@@ -408,7 +439,7 @@ export class PrayerCollectionPage implements OnInit {
     this.persist()
       .pipe(
         switchMap((record) =>
-          this.service.generate(record.id, record.revision),
+          this.service.generate(record.id, this.requireRevision()),
         ),
         switchMap((job) => {
           this.job.set(job);
@@ -501,7 +532,7 @@ export class PrayerCollectionPage implements OnInit {
         error: (e) => this.fail(e),
       });
   }
-  private persist() {
+  private persist(retried = false): Observable<PrayerRecord> {
     this.form.markAllAsTouched();
     if (this.form.invalid) {
       this.fail(new Error("Review the highlighted prayer brief fields."));
@@ -512,9 +543,16 @@ export class PrayerCollectionPage implements OnInit {
     const brief = this.form.getRawValue() as unknown as PrayerDraftForm;
     brief.title = prayerTitle(brief);
     const current = this.record();
+    const revision = this.serverRevision();
+    if (current && !revision) {
+      this.fail(new Error("Reload this prayer collection before saving."));
+      this.saving.set(false);
+      return of();
+    }
+    const localChanged = !this.sameBrief(brief, this.loadedSnapshot());
     return (
       current
-        ? this.service.save(current.id, brief, current.revision)
+        ? this.service.save(current.id, brief, revision!)
         : this.service.create(brief)
     ).pipe(
       finalize(() => this.saving.set(false)),
@@ -526,6 +564,23 @@ export class PrayerCollectionPage implements OnInit {
         return of(saved);
       }),
       catchError((e) => {
+        if (current && e instanceof HttpErrorResponse && e.status === 409) {
+          return this.service.get(current.id).pipe(
+            switchMap((latest) => {
+              this.serverRevision.set(latest.revisionToken);
+              if (!localChanged && !retried) {
+                this.apply(latest);
+                return this.persist(true);
+              }
+              this.conflict.set(brief);
+              this.message.set(
+                "This prayer collection changed since you loaded it.",
+              );
+              this.isError.set(true);
+              return of();
+            }),
+          );
+        }
         this.fail(e);
         return of();
       }),
@@ -533,10 +588,43 @@ export class PrayerCollectionPage implements OnInit {
   }
   private apply(value: PrayerRecord) {
     this.record.set(value);
+    this.serverRevision.set(value.revisionToken);
+    this.loadedSnapshot.set(structuredClone(value.brief));
+    this.conflict.set(null);
     this.form.patchValue(value.brief);
     this.supportingScriptures.clear();
     for (const ref of value.brief.supportingScriptures || [])
       this.supportingScriptures.push(this.scriptureGroup(ref));
+  }
+  reloadConflict() {
+    const id = this.record()?.id;
+    if (id) this.load(id);
+  }
+  reviewConflict() {
+    const local = this.conflict();
+    const id = this.record()?.id;
+    if (!local || !id) return;
+    this.service.get(id).subscribe({
+      next: (latest) => {
+        this.apply(latest);
+        this.form.patchValue(local);
+        this.conflict.set(local);
+        this.message.set(
+          "Review your edits against the latest prayer collection before saving.",
+        );
+        this.isError.set(true);
+      },
+      error: (e) => this.fail(e),
+    });
+  }
+  private requireRevision(): string {
+    const revision = this.serverRevision();
+    if (!revision)
+      throw new Error("Reload this prayer collection before continuing.");
+    return revision;
+  }
+  private sameBrief(a: PrayerDraftForm, b: PrayerDraftForm | null): boolean {
+    return b !== null && JSON.stringify(a) === JSON.stringify(b);
   }
   private scriptureGroup(
     value: ScriptureReference = { book: "", chapter: 1, verses: "" },

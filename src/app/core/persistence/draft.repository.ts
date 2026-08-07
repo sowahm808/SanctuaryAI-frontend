@@ -2,6 +2,8 @@ import { Injectable } from "@angular/core";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { EntityId, IsoDateTime } from "../../models/domain.models";
 
+export type ServerRevisionToken = string | number;
+
 export interface DraftRecord<T = unknown> {
   key: string;
   organizationId: EntityId;
@@ -9,9 +11,22 @@ export interface DraftRecord<T = unknown> {
   entityId?: EntityId;
   payload: T;
   localRevision: number;
-  serverRevision?: number;
+  serverRevision?: ServerRevisionToken;
   updatedAt: IsoDateTime;
   syncState: "local" | "syncing" | "synced" | "conflict" | "failed";
+}
+export function reconcileDraft<T>(
+  local: DraftRecord<T>,
+  currentRevision: string,
+) {
+  return {
+    serverRevision: currentRevision,
+    recoveredPayload: local.payload,
+    conflict:
+      local.serverRevision !== undefined &&
+      local.serverRevision !== currentRevision &&
+      local.syncState !== "synced",
+  };
 }
 interface DraftDatabase extends DBSchema {
   drafts: {
@@ -70,11 +85,26 @@ export class DraftRepository {
     await tx.done;
     return removed;
   }
-  hasConflict(local: DraftRecord, serverRevision: number): boolean {
+  hasConflict(
+    local: DraftRecord,
+    serverRevision: ServerRevisionToken,
+  ): boolean {
     return (
       local.serverRevision !== undefined &&
       local.serverRevision !== serverRevision &&
       local.syncState !== "synced"
     );
+  }
+
+  /** Keeps the detail GET token authoritative while preserving recoverable edits. */
+  reconcile<T>(
+    local: DraftRecord<T>,
+    currentRevision: string,
+  ): {
+    serverRevision: string;
+    recoveredPayload: T;
+    conflict: boolean;
+  } {
+    return reconcileDraft(local, currentRevision);
   }
 }
