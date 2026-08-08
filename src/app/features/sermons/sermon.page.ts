@@ -664,9 +664,7 @@ export class SermonPage implements OnInit, OnDestroy {
       this.approvals
         .submitForReview({
           contentId: this.sermonId,
-          contentVersionId: this.contentVersionId,
           contentType: "sermon",
-          priority: "normal",
         })
         .subscribe({
           next: () => {

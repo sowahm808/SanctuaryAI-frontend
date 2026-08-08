@@ -16,15 +16,14 @@ TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
 const submittedReview: ReviewDetail = {
   id: "review_persisted_1",
-  contentId: "sermon_1",
-  contentType: "sermon",
+  resourceId: "sermon_1",
+  resourceType: "sermon",
   title: "Persisted Sunday sermon",
-  ownerId: "author_1",
-  ownerName: "Pastor Grace",
+  requestedByUserId: "author_1",
+  requestedByName: "Pastor Grace",
   priority: "high",
   status: "pending",
   submittedAt: "2026-08-07T01:00:00Z",
-  updatedAt: "2026-08-07T01:00:00Z",
   proposedVersion: {
     id: "version_1",
     versionNumber: 1,
@@ -48,6 +47,7 @@ describe("ReviewsPage", () => {
       getQueue: vi.fn(() => of({ items: [submittedReview], total: 1 })),
       getDetail: vi.fn(() => NEVER),
       getEligibleReviewers: vi.fn(() => of({ items: [], total: 0 })),
+      queueRefreshes: NEVER,
     };
     await TestBed.configureTestingModule({
       imports: [ReviewsPage],
