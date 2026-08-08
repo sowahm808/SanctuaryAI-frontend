@@ -151,16 +151,18 @@ import { ApprovalService } from "./approval.service";
               (click)="select(r.id)"
               (keydown.enter)="select(r.id)"
             >
-              <span class="badge">{{ r.contentType }} · {{ r.priority }}</span>
+              <span class="badge"
+                >{{ r.resourceType }} · {{ r.priority || "normal" }}</span
+              >
               <h3>{{ r.title }}</h3>
               <p class="muted">
-                Owner {{ r.ownerName }} · Assigned
-                {{ r.assigneeName || "Unassigned" }} · Due
+                Requested by {{ r.requestedByName || "Unknown" }} · Assigned
+                {{ r.reviewerName || "Unassigned" }} · Due
                 {{ r.dueAt || "Not set" }}
               </p>
               <small
-                >Content: {{ r.status }} · Publishing:
-                {{ r.publishingAuthorizationStatus || "Not requested" }}</small
+                >Content: {{ r.status }} · Version:
+                {{ r.versionLabel || r.revision || "Not specified" }}</small
               >
             </article>
           } @empty {
@@ -177,8 +179,8 @@ import { ApprovalService } from "./approval.service";
           <span class="badge">{{ item.status }}</span>
           <h2>{{ item.title }}</h2>
           <p>
-            <b>Assignment:</b> {{ item.assigneeName || "Unassigned" }} ·
-            <b>Priority:</b> {{ item.priority }} · <b>Due:</b>
+            <b>Assignment:</b> {{ item.reviewerName || "Unassigned" }} ·
+            <b>Priority:</b> {{ item.priority || "normal" }} · <b>Due:</b>
             {{ item.dueAt || "Not set" }}
           </p>
           <div class="grid compare" aria-label="Version comparison">
@@ -191,7 +193,7 @@ import { ApprovalService } from "./approval.service";
                   {{ version.createdByName || "Unknown author" }}
                 </p>
                 <app-review-content-preview
-                  [contentType]="item.contentType"
+                  [contentType]="item.resourceType"
                   [content]="version.content"
                 />
               } @else {
@@ -208,7 +210,7 @@ import { ApprovalService } from "./approval.service";
                 {{ item.proposedVersion.createdByName || "Unknown author" }}
               </p>
               <app-review-content-preview
-                [contentType]="item.contentType"
+                [contentType]="item.resourceType"
                 [content]="item.proposedVersion.content"
               />
             </section>
@@ -235,8 +237,13 @@ import { ApprovalService } from "./approval.service";
                 <label for="assign">Assign to</label
                 ><select id="assign" formControlName="assigneeId">
                   <option value="">Select an eligible reviewer</option>
-                  @for (reviewer of reviewers(); track reviewer.id) {
-                    <option [value]="reviewer.id">{{ reviewer.name }}</option>
+                  @for (
+                    reviewer of reviewers();
+                    track reviewer.userId || reviewer.id
+                  ) {
+                    <option [value]="reviewer.userId || reviewer.id">
+                      {{ reviewer.name }}
+                    </option>
                   }
                 </select>
               </div>
@@ -340,7 +347,9 @@ export class ReviewsPage implements OnInit {
   readonly selected = signal<ReviewDetail | null>(null);
   readonly comments = signal<ReviewComment[]>([]);
   readonly audits = signal<ReviewAuditEntry[]>([]);
-  readonly reviewers = signal<readonly { id: string; name: string }[]>([]);
+  readonly reviewers = signal<
+    readonly { id: string; userId?: string; name: string }[]
+  >([]);
   readonly loadingQueue = signal(false);
   readonly queueError = signal<string | null>(null);
   readonly loadingDetail = signal(false);
@@ -373,6 +382,9 @@ export class ReviewsPage implements OnInit {
         next: (p) => this.reviewers.set(p.items),
         error: () => undefined,
       });
+    this.reviews.queueRefreshes
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadQueue());
   }
   loadQueue(): void {
     this.loadingQueue.set(true);
@@ -382,7 +394,7 @@ export class ReviewsPage implements OnInit {
       type: (f.type || undefined) as ReviewContentType | undefined,
       assigneeId: f.assignee || undefined,
       priority: (f.priority || undefined) as ReviewQueueFilters["priority"],
-      due: f.dueAt || undefined,
+      dueBy: f.dueAt || undefined,
     };
     this.reviews
       .getQueue(filters)
@@ -441,7 +453,6 @@ export class ReviewsPage implements OnInit {
     this.submit(
       this.reviews[action](item.id, {
         reason: reason || undefined,
-        comment: this.decision.controls.comment.value.trim() || undefined,
       }),
       `Review ${action === "requestChanges" ? "changes requested" : action + "d"}.`,
       true,
@@ -459,7 +470,7 @@ export class ReviewsPage implements OnInit {
     this.submit(
       this.reviews.assign(item.id, this.decision.controls.assigneeId.value),
       "Review assigned.",
-      false,
+      true,
     );
   }
   addComment(): void {
@@ -478,7 +489,8 @@ export class ReviewsPage implements OnInit {
         next: () => {
           this.decision.controls.comment.reset();
           this.success.set("Comment saved.");
-          this.reloadDetail();
+          this.clearDetail();
+          this.loadQueue();
         },
         error: (e) => this.error.set(this.message(e)),
       });
@@ -502,7 +514,10 @@ export class ReviewsPage implements OnInit {
           this.decision.controls.comment.reset();
           this.decision.controls.reason.reset();
           this.success.set(success);
-          if (refreshQueue) this.loadQueue();
+          if (refreshQueue) {
+            this.clearDetail();
+            this.loadQueue();
+          } else this.reloadDetail();
         },
         error: (e) => {
           this.error.set(this.message(e));

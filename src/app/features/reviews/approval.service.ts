@@ -1,5 +1,5 @@
 import { Injectable, inject } from "@angular/core";
-import { map, type Observable } from "rxjs";
+import { map, Subject, tap, type Observable } from "rxjs";
 import {
   ApiClientService,
   resourcePath,
@@ -27,37 +27,47 @@ import type {
 @Injectable({ providedIn: "root" })
 export class ApprovalService {
   private readonly api = inject(ApiClientService);
+  private readonly queueRefresh = new Subject<void>();
+  readonly queueRefreshes = this.queueRefresh.asObservable();
 
   submitContent(
     kind: WorkflowKind,
     contentId: EntityId,
+    revision?: string | number,
+    reviewerUserId?: string,
   ): Observable<ReviewQueueItem> {
     const config = workflowApiConfig(kind);
     return this.api
-      .postResource<Record<string, never>, ReviewQueueItem>(
+      .postResource<SubmitReviewBody, ReviewQueueItem>(
         config.group,
         config.submitReviewResource(contentId),
-        {},
+        compactSubmitBody(revision, reviewerUserId),
       )
-      .pipe(map(({ data }) => data));
+      .pipe(
+        map(({ data }) => data),
+        tap(() => this.queueRefresh.next()),
+      );
   }
 
   submitForReview(input: SubmitForReviewRequest): Observable<ReviewQueueItem> {
     return this.api
-      .postResource<Record<string, never>, ReviewQueueItem>(
+      .postResource<SubmitReviewBody, ReviewQueueItem>(
         contentGroup(input.contentType),
         resourcePath(input.contentId, "submit-review"),
-        {},
+        compactSubmitBody(input.revision, input.reviewerUserId),
       )
-      .pipe(map(({ data }) => data));
+      .pipe(
+        map(({ data }) => data),
+        tap(() => this.queueRefresh.next()),
+      );
   }
 
   getForContent(
-    contentType: ReviewQueueItem["contentType"],
+    contentType: ReviewQueueItem["resourceType"],
     contentId: string,
   ): Observable<readonly ReviewQueueItem[]> {
     return this.getQueue({ type: contentType }).pipe(
-      map((page) => page.items.filter((item) => item.contentId === contentId)),
+      map((page) => page.items.filter((item) => item.resourceId === contentId)),
     );
   }
 
@@ -71,7 +81,7 @@ export class ApprovalService {
       ),
     );
     return this.api
-      .collectionPage<ReviewQueueItem>("approvals", query)
+      .list<ReviewQueueItem>("approvals", { filters: query })
       .pipe(unwrapCursorPage());
   }
 
@@ -94,12 +104,12 @@ export class ApprovalService {
   reject(id: string, request: ReviewDecisionRequest): Observable<ReviewDetail> {
     return this.decision(id, "reject", request);
   }
-  assign(id: string, assigneeId: string): Observable<ReviewDetail> {
+  assign(id: string, reviewerUserId?: string): Observable<ReviewDetail> {
     return this.api
-      .patchResource<AssignReviewRequest, ReviewDetail>(
+      .postResource<AssignReviewRequest, ReviewDetail>(
         "approvals",
-        resourcePath(id, "assignee"),
-        { assigneeId },
+        resourcePath(id, "assign"),
+        reviewerUserId ? { reviewerUserId } : {},
       )
       .pipe(unwrapData());
   }
@@ -134,6 +144,18 @@ export class ApprovalService {
   }
 }
 
+type SubmitReviewBody = { revision?: string | number; reviewerUserId?: string };
+
+function compactSubmitBody(
+  revision?: string | number,
+  reviewerUserId?: string,
+): SubmitReviewBody {
+  return {
+    ...(revision !== undefined ? { revision } : {}),
+    ...(reviewerUserId ? { reviewerUserId } : {}),
+  };
+}
+
 function contentGroup(type: SubmitForReviewRequest["contentType"]): ApiGroup {
   const groups: Partial<
     Record<SubmitForReviewRequest["contentType"], ApiGroup>
@@ -142,6 +164,9 @@ function contentGroup(type: SubmitForReviewRequest["contentType"]): ApiGroup {
     sermon: "sermons",
     prayer: "prayers",
     declaration: "declarations",
+    flyer: "flyers",
+    video: "videos",
+    social_post: "social-posts",
   };
   const group = groups[type];
   if (!group) throw new Error(`Unsupported approval content type: ${type}`);

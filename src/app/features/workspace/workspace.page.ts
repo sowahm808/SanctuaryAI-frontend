@@ -355,7 +355,11 @@ export class WorkspacePage {
     this.submittingForReview.set(true);
     this.workflowError.set(null);
     this.approvals
-      .submitContent(this.kind(), draft.id)
+      .submitContent(
+        this.kind(),
+        draft.id,
+        this.kind() === "themes" ? draft.revision : undefined,
+      )
       .pipe(
         finalize(() => this.submittingForReview.set(false)),
         takeUntilDestroyed(this.destroyRef),
